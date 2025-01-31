@@ -15,6 +15,13 @@ int incTime = 10;
 int incTarget = 1;
 int incObstacle = 1;
 
+// int levelTime = 0;
+// int numTarget = 0;
+// int numObstacle = 0;
+// int incTime = 0;
+// int incTarget = 0;
+// int incObstacle = 0;
+
 const char *moves[] = {"upleft", "up", "upright", "left", "center", "right", "downleft", "down", "downright"};
 char jsonBuffer[MAX_FILE_SIZE];
 

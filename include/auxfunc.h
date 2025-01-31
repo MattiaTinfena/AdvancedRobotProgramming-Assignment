@@ -39,8 +39,8 @@ extern int levelTime;
 extern int numTarget;
 extern int numObstacle;
 extern int incTime;
-extern int incTarget1;
-extern int incObstacle1;
+extern int incTarget;
+extern int incObstacle;
 
 
 typedef struct {
@@ -92,14 +92,6 @@ typedef struct{
     Drone_bb droneInfo;
 } inputMessage;
 
-typedef struct
-{
-    char playerName[MAX_LINE_LENGTH];
-    char difficulty[MAX_LINE_LENGTH];
-    int startingLevel;
-    int defbtn[9];
-} Config;
-
 typedef struct {
     
     char name[MAX_LINE_LENGTH];
@@ -107,7 +99,6 @@ typedef struct {
     int level;
 } Player;
 
-typedef Config *conf_ptr;
 extern char jsonBuffer[MAX_FILE_SIZE];
 
 int writeSecure(char* filename, char* data, int numeroRiga, char mode);
