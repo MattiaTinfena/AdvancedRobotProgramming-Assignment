@@ -121,6 +121,7 @@ void mapInit(FILE *file){
                 "[BB] Error reading drone position\n", file);
 
     status.level = inputStatus.level;
+    status.difficulty = inputStatus.difficulty;
 
     resetTargetValue(&status);
 
@@ -201,7 +202,7 @@ void drawTarget(WINDOW * win) {
     for(int i = 0; i < numTarget + status.level; i++){
         if (status.targets.value[i] == 0) continue;
         char val_str[2];
-        sprintf(val_str, "%d", status.targets.value[i]); // Converte il valore in stringa
+        sprintf(val_str, "%d", (status.targets.value[i] * status.difficulty)); // Converte il valore in stringa
         mvwprintw(win, (int)(status.targets.y[i] * scaleh), (int)(status.targets.x[i] * scalew), "%s", val_str); // Usa un formato esplicito
     } 
     wattroff(win, COLOR_PAIR(3)); 
@@ -277,7 +278,7 @@ void detectCollision(Message* status, Drone_bb * prev, FILE* file) {
             (prev->y <= status->targets.y[i] + 2 && status->targets.y[i]- 2 <= status->drone.y) )||
             ((prev->x >= status->targets.x[i] - 2 && status->targets.x[i] >= status->drone.x + 2) &&
             (prev->y >= status->targets.y[i] - 2 && status->targets.y[i] >= status->drone.y + 2) ))){
-                inputStatus.score += status->targets.value[i];
+                inputStatus.score += (status->targets.value[i]* status->difficulty);
                 status->targets.value[i] = 0;
                 collision = 1;
                 targetsHit++;   
@@ -561,7 +562,13 @@ int main(int argc, char *argv[]) {
     while (1) {
         
         elapsedTime += PERIODBB/second;
-        remainingTime = (int)(levelTime + (5*status.level)) - (int)elapsedTime;
+
+        fprintf(file,"diff: %d\n", status.difficulty);
+        fflush(file); 
+        fprintf(file,"inctime: %d\n", incTime);
+        fflush(file); 
+               
+        remainingTime = levelTime + (int)(incTime*status.level/status.difficulty) - (int)elapsedTime;
 
         if (remainingTime < 0){
             elapsedTime = 0;
