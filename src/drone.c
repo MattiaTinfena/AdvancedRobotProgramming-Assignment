@@ -234,7 +234,7 @@ void mapInit(Drone* drone, Message* status, Message* msg){
     
     readMsg(fds[recrd], status,
             "[DRONE] Error receiving map from BB", droneFile);
-
+}
 
 int main(int argc, char *argv[]) {
     

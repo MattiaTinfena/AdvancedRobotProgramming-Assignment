@@ -618,9 +618,6 @@ int main(int argc, char *argv[]) {
     // fprintf(file, "ObstacleNumber: %d\n", numObstacle);
     // fprintf(file, "TargetIncrement: %d\n", incTarget);
     // fprintf(file, "ObstacleIncrement: %d\n", incObstacle);
-    
-
-    LOG(inputStatus);
 
 
     mapInit(file);
