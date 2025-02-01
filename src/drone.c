@@ -146,7 +146,7 @@ void obstacle_force(Drone *drone, Obstacles* obstacles, FILE* file) {
     force_o.x = 0;
     force_o.y = 0;
 
-    for (int i = 0; i < numObstacle + status.level; i++) {
+    for (int i = 0; i < numObstacle + status.obstacles.incr; i++) {
         deltaX = drone->x - obstacles->x[i];
         deltaY = drone->y - obstacles->y[i];
         distance = sqrt(pow(deltaX, 2) + pow(deltaY, 2));
@@ -175,7 +175,7 @@ void target_force(Drone *drone, Targets* targets, FILE* file) {
     force_t.x = 0;
     force_t.y = 0;
 
-    for (int i = 0; i < numTarget + status.level; i++) {
+    for (int i = 0; i < numTarget + status.targets.incr; i++) {
         if(targets->value[i] > 0){    
             deltaX = targets->x[i] - drone->x;
             deltaY = targets->y[i] - drone->y;
@@ -307,6 +307,7 @@ int main(int argc, char *argv[]) {
         status.targets.x[i] = 0;
         status.targets.y[i] = 0;
     }
+    targets.incr = 0;
 
     for (int i = 0; i < MAX_OBSTACLES; i++) {
         obstacles.x[i] = 0;
@@ -314,6 +315,7 @@ int main(int argc, char *argv[]) {
         status.obstacles.x[i] = 0;
         status.obstacles.y[i] = 0;
     }
+    obstacles.incr = 0;
 
     char data[200];
 

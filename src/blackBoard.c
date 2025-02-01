@@ -123,6 +123,15 @@ void mapInit(FILE *file){
     status.level = inputStatus.level;
     status.difficulty = inputStatus.difficulty;
 
+    status.targets.incr = status.level*status.difficulty*incTarget;
+    status.obstacles.incr = status.level*status.difficulty*incObstacle;
+
+    msg.targets.incr = status.targets.incr;
+    msg.obstacles.incr = status.obstacles.incr;
+
+    fprintf(file, "incr: %d,%d\n", status.targets.incr,status.obstacles.incr);
+    fflush(file);
+
     resetTargetValue(&status);
 
     printMessageToFile(file, &status);
@@ -135,6 +144,11 @@ void mapInit(FILE *file){
     // receiving target position
     readMsg(fds[TARGET][askrd], &status,
             "[BB] Error reading target\n", file);
+    
+    printMessageToFile(file, &status);
+
+    fprintf(file, "incr: %d,%d\n", status.targets.incr,status.obstacles.incr);
+    fflush(file);
 
     fprintf(file,"\n");
     for(int i = 0; i < MAX_TARGET; i++ ){
@@ -149,6 +163,13 @@ void mapInit(FILE *file){
     // receiving obstacle position
     readMsg(fds[OBSTACLE][askrd], &status,
             "[BB] Error reading obstacles positions\n", file);
+
+    // status.targets.incr = status.level*status.difficulty*incTarget;
+    // status.obstacles.incr = status.level*status.difficulty*incObstacle;
+
+    fprintf(file, "incr: %d,%d\n", status.targets.incr,status.obstacles.incr);
+    fflush(file);
+
     fprintf(file,"\n");
     for(int i = 0; i < MAX_OBSTACLES; i++ ){
         fprintf(file, "obst[%d] = %d,%d\n", i, status.obstacles.x[i], status.obstacles.y[i]);
@@ -166,6 +187,12 @@ void mapInit(FILE *file){
     inputStatus.msg = 'B';
     writeInputMsg(fds[INPUT][recwr], &inputStatus, 
                 "Error sending ack", file);
+
+    // status.targets.incr = status.level*status.difficulty*incTarget;
+    // status.obstacles.incr = status.level*status.difficulty*incObstacle;
+
+    fprintf(file, "incr: %d,%d\n", status.targets.incr,status.obstacles.incr);
+    fflush(file);
 
     fprintf(file, "\n--------------------------\n");
     fprintf(file, "MAP INITIALIZATION FINISHED\n");
@@ -189,7 +216,7 @@ void drawDrone(WINDOW * win){
 void drawObstacle(WINDOW * win){
     wattron(win, A_BOLD); // Attiva il grassetto
     wattron(win, COLOR_PAIR(2)); 
-    for(int i = 0; i < numObstacle + status.level; i++){
+    for(int i = 0; i < numObstacle + status.obstacles.incr; i++){
         mvwprintw(win, (int)(status.obstacles.y[i]*scaleh), (int)(status.obstacles.x[i]*scalew), "0");
     }
     wattroff(win, COLOR_PAIR(2)); 
@@ -199,7 +226,7 @@ void drawObstacle(WINDOW * win){
 void drawTarget(WINDOW * win) {
     wattron(win, A_BOLD); // Attiva il grassetto
     wattron(win, COLOR_PAIR(3)); 
-    for(int i = 0; i < numTarget + status.level; i++){
+    for(int i = 0; i < numTarget + status.targets.incr; i++){
         if (status.targets.value[i] == 0) continue;
         char val_str[2];
         sprintf(val_str, "%d", (status.targets.value[i] * status.difficulty)); // Converte il valore in stringa
@@ -272,7 +299,7 @@ int randomSelect(int n) {
 
 void detectCollision(Message* status, Drone_bb * prev, FILE* file) {
     // fprintf(file, "PREV(%d, %d), DRONE(%d, %d)\nTARGET:\n", prev->x, prev->y, status->drone.x, status->drone.y);
-    for (int i = 0; i < numTarget + status->level; i++) {
+    for (int i = 0; i < numTarget + status->targets.incr; i++) {
         // fprintf(file, " (%d, %d, %d)", status->targets.x[i], status->targets.y[i], status->targets.value[i]);
         if (status->targets.value[i] && (((prev->x <= status->targets.x[i] + 2 && status->targets.x[i] - 2 <= status->drone.x)  &&
             (prev->y <= status->targets.y[i] + 2 && status->targets.y[i]- 2 <= status->drone.y) )||
@@ -365,7 +392,7 @@ void createNewMap(){
 
 void resetTargetValue(Message* status){
     for(int i = 0; i < MAX_TARGET; i++){
-        if(i < numTarget + status->level){
+        if(i < numTarget + status->targets.incr){
             status->targets.value[i] = i + 1;
         }
         else{
@@ -557,16 +584,13 @@ int main(int argc, char *argv[]) {
 
     mapInit(file);
 
+    // fprintf(file, "incr: %d,%d\n", status.targets.incr,status.obstacles.incr);
+    // fflush(file);
     elapsedTime = 0;
 
     while (1) {
         
         elapsedTime += PERIODBB/second;
-
-        fprintf(file,"diff: %d\n", status.difficulty);
-        fflush(file); 
-        fprintf(file,"inctime: %d\n", incTime);
-        fflush(file); 
                
         remainingTime = levelTime + (int)(incTime*status.level/status.difficulty) - (int)elapsedTime;
 
@@ -617,11 +641,17 @@ int main(int argc, char *argv[]) {
             createNewMap();
         }
 
-        if (targetsHit >= numTarget + status.level) {
+        if (targetsHit >= numTarget + status.targets.incr) {
             fprintf(file, "All targets reached\n");
             fflush(file);
             status.level++;
             inputStatus.level = status.level;  
+            status.targets.incr = status.level*status.difficulty*incTarget;
+            status.obstacles.incr = status.level*status.difficulty*incObstacle;
+            msg.targets.incr = status.targets.incr;
+            msg.obstacles.incr = status.obstacles.incr;
+            fprintf(file, "incr: %d,%d\n", status.targets.incr,status.obstacles.incr);
+            fflush(file);
             targetsHit = 0;
             elapsedTime = 0;
             collision = 0;

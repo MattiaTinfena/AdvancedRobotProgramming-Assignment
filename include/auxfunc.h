@@ -65,11 +65,13 @@ typedef struct {
     int x[MAX_TARGET];
     int y[MAX_TARGET];
     int value[MAX_TARGET];
+    int incr;
 } Targets;
 typedef struct
 {
     int x[MAX_OBSTACLES];
     int y[MAX_OBSTACLES];
+    int incr;
 } Obstacles;
 
 typedef struct {
