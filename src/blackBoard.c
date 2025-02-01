@@ -422,6 +422,42 @@ void closeAll(){
 
 }
 
+void quit(){
+
+    readInputMsg(fds[INPUT][askrd], &inputMsg, 
+                "[BB] Error reading input", file);
+
+    while(inputMsg.msg != 'q'){
+                
+        fprintf(file, "Waiting for quit\n");
+        
+        fflush(file);
+
+        readInputMsg(fds[INPUT][askrd], &inputMsg, 
+                "[BB] Error reading input", file);
+
+    }
+
+    fprintf(file, "Quit\n");
+    fflush(file);
+    
+    inputStatus.msg = 'S';
+    
+    writeInputMsg(fds[INPUT][recwr], &inputStatus, 
+                "[BB] Error sending ack", file);
+    
+    readInputMsg(fds[INPUT][askrd], &inputMsg, 
+                "[BB] Error reading input", file);
+    
+    if(inputMsg.msg == 'R'){    //input ready, all data are saved
+
+        fprintf(file, "Status saved\n");
+        fflush(file);
+
+        closeAll();
+    }          
+}
+
 int main(int argc, char *argv[]) {
 
     // Log file opening
@@ -598,40 +634,8 @@ int main(int argc, char *argv[]) {
             elapsedTime = 0;
             mvwprintw(map, nh/2, nw/2, "Time's up! Game over!");
             mvwprintw(map, nh/2 + 1, nw/2,"Press q to quit");
-            wrefresh(map);
-            
-            readInputMsg(fds[INPUT][askrd], &inputMsg, 
-                                "[BB] Error reading input", file);
-
-            while(inputMsg.msg != 'q'){
-                        
-                fprintf(file, "Waiting for quit\n");
-                
-                fflush(file);
-
-                readInputMsg(fds[INPUT][askrd], &inputMsg, 
-                        "[BB] Error reading input", file);
-
-            }
-
-            fprintf(file, "Quit\n");
-            fflush(file);
-            
-            inputStatus.msg = 'S';
-            
-            writeInputMsg(fds[INPUT][recwr], &inputStatus, 
-                        "[BB] Error sending ack", file);
-            
-            readInputMsg(fds[INPUT][askrd], &inputMsg, 
-                        "[BB] Error reading input", file);
-            
-            if(inputMsg.msg == 'R'){    //input ready, all data are saved
-
-                fprintf(file, "Status saved\n");
-                fflush(file);
-
-                closeAll();
-            }           
+            wrefresh(map);            
+            quit(); 
         }
 
         if(elapsedTime >= resetMap && inputStatus.difficulty == HARD){
@@ -645,6 +649,14 @@ int main(int argc, char *argv[]) {
             fprintf(file, "All targets reached\n");
             fflush(file);
             status.level++;
+
+            if(status.level > 5){
+                mvwprintw(map, nh/2, nw/2, "Congratulations! You Won!");
+                mvwprintw(map, nh/2 + 1, nw/2,"Press q to quit");
+                wrefresh(map);
+                quit();
+            }
+                
             inputStatus.level = status.level;  
             status.targets.incr = status.level*status.difficulty*incTarget;
             status.obstacles.incr = status.level*status.difficulty*incObstacle;
