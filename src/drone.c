@@ -125,9 +125,11 @@ void obstacle_force(Drone *drone, Obstacles* obstacles, FILE* droneFile) {
     force_o.x = 0;
     force_o.y = 0;
 
-    for (int i = 0; i < numObstacle + status.level; i++) {
+
+    for (int i = 0; i < numObstacle + status.obstacles.incr; i++) {
         deltaX =  obstacles->x[i] - drone->x;
         deltaY =  obstacles->y[i] - drone->y;
+
         distance = sqrt(pow(deltaX, 2) + pow(deltaY, 2));
 
         if (distance > FORCE_THRESHOLD) {
@@ -149,7 +151,7 @@ void target_force(Drone *drone, Targets* targets, FILE* droneFile) {
     force_t.x = 0;
     force_t.y = 0;
 
-    for (int i = 0; i < numTarget + status.level; i++) {
+    for (int i = 0; i < numTarget + status.targets.incr; i++) {
         if(targets->value[i] > 0){    
             deltaX = targets->x[i] - drone->x;
             deltaY = targets->y[i] - drone->y;
@@ -216,8 +218,10 @@ void mapInit(Drone* drone, Message* status, Message* msg){
     
     msgInit(status);
 
+
     fprintf(droneFile, "First map initialization. Updating drone position... ");
     fflush(droneFile);
+
 
     droneUpdate(drone, &speed, &force, status);
     LOGDRONEINFO(status->drone);
@@ -230,7 +234,7 @@ void mapInit(Drone* drone, Message* status, Message* msg){
     
     readMsg(fds[recrd], status,
             "[DRONE] Error receiving map from BB", droneFile);
-}
+
 
 int main(int argc, char *argv[]) {
     
@@ -270,6 +274,7 @@ int main(int argc, char *argv[]) {
         status.targets.x[i] = 0;
         status.targets.y[i] = 0;
     }
+    targets.incr = 0;
 
     for (int i = 0; i < MAX_OBSTACLES; i++) {
         obstacles.x[i] = 0;
@@ -277,6 +282,7 @@ int main(int argc, char *argv[]) {
         status.obstacles.x[i] = 0;
         status.obstacles.y[i] = 0;
     }
+    obstacles.incr = 0;
 
     char data[200];
 

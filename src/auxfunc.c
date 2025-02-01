@@ -294,11 +294,16 @@ void printMessageToFile(FILE *file, Message* msg) {
             fprintf(file, "targ[%d] = %d,%d,%d\n", i, msg->targets.x[i], msg->targets.y[i], msg->targets.value[i]);
         }
 
+    fprintf(file, "incTarg: %d\n", msg->targets.incr);
+
+
     fprintf(file, "\nObstacles:\n");
     for(int i = 0; i < MAX_OBSTACLES; i++ ){
             fprintf(file, "obs[%d] = %d,%d\n", i, msg->obstacles.x[i], msg->obstacles.y[i]);
             fflush(file);
-        }
+    }
+    fprintf(file, "incObst: %d\n", msg->obstacles.incr);
+
     fflush(file);
 }
 
