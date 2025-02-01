@@ -22,6 +22,8 @@
 #define FORCE_THRESHOLD 5 //[m]
 #define MIN_THRESHOLD 2 //[m]
 
+#define MAX_FORCE 0.5 //
+
 #define TARGET_DETECTION 1
 
 #define len_str_targets 6 * MAX_TARGET + 2
@@ -35,8 +37,13 @@
 
 extern const char *moves[9];
 
+extern int levelTime;
 extern int numTarget;
 extern int numObstacle;
+extern int incTime;
+extern int incTarget1;
+extern int incObstacle1;
+
 
 typedef struct {
     int x;
@@ -96,7 +103,8 @@ typedef struct
 } Config;
 
 typedef struct {
-    char name[50];
+    
+    char name[MAX_LINE_LENGTH];
     int score;
     int level;
 } Player;
@@ -107,14 +115,15 @@ extern char jsonBuffer[MAX_FILE_SIZE];
 int writeSecure(char* filename, char* data, int numeroRiga, char mode);
 int readSecure(char* filename, char* data, int numeroRiga);
 void handler(int id);
-void msgUnpack(Message* msgIn, Message* msgOut);
 void writeMsg(int pipeFds, Message* msg, char* error, FILE* file);
-void readMsg(int pipeFds, Message* msgIn, Message* msgOut, char* error, FILE* file);
+void readMsg(int pipeFds, Message* msgOut, char* error, FILE* file);
 void writeInputMsg(int pipeFds, inputMessage* msg, char* error, FILE* file);
-void readInputMsg(int pipeFds, inputMessage* msgIn, inputMessage* msgOut, char* error, FILE* file);
-void inputMsgUnpack(inputMessage* msgIn, inputMessage* msgOut);
+void readInputMsg(int pipeFds, inputMessage* msgOut, char* error, FILE* file);
 void fdsRead (int argc, char* argv[], int* fds);
 int writePid(char* file, char mode, int row, char id);
-void printInputMessageToFile(FILE *file, inputMessage msg);
-
+void printInputMessageToFile(FILE *file, inputMessage* msg);
+void printMessageToFile(FILE *file, Message* msg);
+void msgInit(Message* status);
+void inputMsgInit(inputMessage* status);
+void getFormattedTime(char *buffer, size_t size);
 #endif

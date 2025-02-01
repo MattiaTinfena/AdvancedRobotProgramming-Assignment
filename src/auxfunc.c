@@ -8,8 +8,12 @@
 #include "auxfunc.h"
 #include <time.h>
 
+int levelTime = 40;
 int numTarget = 4;
 int numObstacle = 9;
+int incTime = 10;
+int incTarget = 1;
+int incObstacle = 1;
 
 const char *moves[] = {"upleft", "up", "upright", "left", "center", "right", "downleft", "down", "downright"};
 char jsonBuffer[MAX_FILE_SIZE];
@@ -182,65 +186,39 @@ int readSecure(char* filename, char* data, int numeroRiga) {
     return 0;
 }
 
-void msgUnpack(Message* msgIn, Message* msgOut){
-    msgOut->msg = msgIn->msg;
-    msgOut->level = msgIn->level;
-    msgOut->difficulty = msgIn->difficulty;
-    strncpy(msgOut->input, msgIn->input, sizeof(msgOut->input));
-    msgOut->drone = msgIn->drone;
-    msgOut->targets = msgIn->targets;
-    msgOut->obstacles = msgIn->obstacles;
-}
-
 void writeMsg(int pipeFds, Message* msg, char* error, FILE* file){
   if (write(pipeFds, msg, sizeof(Message)) == -1) {
-        fprintf(file,"Errore%s\n", error);
+        fprintf(file,"Error: %s\n", error);
         fflush(file);
         perror(error);
         exit(EXIT_FAILURE);
     }  
 }
 
-void inputMsgUnpack(inputMessage* msgIn, inputMessage* msgOut) {
-    msgOut->msg = msgIn->msg;
-    strncpy(msgOut->name, msgIn->name, MAX_LINE_LENGTH);
-    strncpy(msgOut->input, msgIn->input, sizeof(msgOut->input));
-    msgOut->difficulty = msgIn->difficulty;
-    msgOut->level = msgIn->level;
-    msgOut->score = msgIn->score;
-    msgOut->droneInfo = msgIn->droneInfo;
-}
-
-
-
-void readMsg(int pipeFds, Message* msgIn, Message* msgOut, char* error, FILE* file){
-    if (read(pipeFds, msgIn, sizeof(Message)) == -1){
-        fprintf(file, "Errore%s\n", error);
+void readMsg(int pipeFds, Message* msgOut, char* error, FILE* file){   
+    if (read(pipeFds, msgOut, sizeof(Message)) == -1){
+        fprintf(file, "Error: %s\n", error);
         fflush(file);
         perror(error);
         exit(EXIT_FAILURE);
     }
-
-    msgUnpack(msgIn, msgOut);
 }
 
 void writeInputMsg(int pipeFds, inputMessage* msg, char* error, FILE* file){
     if (write(pipeFds, msg, sizeof(inputMessage)) == -1) {
-        fprintf(file,"Errore%s\n", error);
+        fprintf(file,"Error: %s\n", error);
         fflush(file);
         perror(error);
         exit(EXIT_FAILURE);
     }  
 }
-void readInputMsg(int pipeFds, inputMessage* msgIn, inputMessage* msgOut, char* error, FILE* file){
-    if (read(pipeFds, msgIn, sizeof(inputMessage)) == -1){
-        fprintf(file, "Errore%s\n", error);
+void readInputMsg(int pipeFds, inputMessage* msgOut, char* error, FILE* file){
+    if (read(pipeFds, msgOut, sizeof(inputMessage)) == -1){
+        fprintf(file, "Error: %s\n", error);
         fflush(file);
         perror(error);
         exit(EXIT_FAILURE);
     }
-
-    inputMsgUnpack(msgIn, msgOut);
 }
 
 void fdsRead (int argc, char* argv[], int* fds){
@@ -278,22 +256,89 @@ int writePid(char* file, char mode, int row, char id){
     return pid;
 }
 
-void printInputMessageToFile(FILE *file, inputMessage msg) {
+void printInputMessageToFile(FILE *file, inputMessage* msg) {
     fprintf(file, "\n");
-    fprintf(file, "msg: %c\n", msg.msg);
-    fprintf(file, "name: %s\n", msg.name);
-    fprintf(file, "input: %s\n", msg.input);
-    fprintf(file, "difficulty: %d\n", msg.difficulty);
-    fprintf(file, "level: %d\n", msg.level);
-    fprintf(file,"Score: %d\n", msg.score);
+    fprintf(file, "msg: %c\n", msg->msg);
+    fprintf(file, "name: %s\n", msg->name);
+    fprintf(file, "input: %s\n", msg->input);
+    fprintf(file, "difficulty: %d\n", msg->difficulty);
+    fprintf(file, "level: %d\n", msg->level);
+    fprintf(file,"Score: %d\n", msg->score);
     fprintf(file, "droneInfo:\n");
-    fprintf(file, "  x: %d\n", msg.droneInfo.x);
-    fprintf(file, "  y: %d\n", msg.droneInfo.y);
-    fprintf(file, "  speedX: %.2f\n", msg.droneInfo.speedX);
-    fprintf(file, "  speedY: %.2f\n", msg.droneInfo.speedY);
-    fprintf(file, "  forceX: %.2f\n", msg.droneInfo.forceX);
-    fprintf(file, "  forceY: %.2f\n", msg.droneInfo.forceY);
+    fprintf(file, "  x: %d\n", msg->droneInfo.x);
+    fprintf(file, "  y: %d\n", msg->droneInfo.y);
+    fprintf(file, "  speedX: %.2f\n", msg->droneInfo.speedX);
+    fprintf(file, "  speedY: %.2f\n", msg->droneInfo.speedY);
+    fprintf(file, "  forceX: %.2f\n", msg->droneInfo.forceX);
+    fprintf(file, "  forceY: %.2f\n", msg->droneInfo.forceY);
     fflush(file);
+}
+
+void printMessageToFile(FILE *file, Message* msg) {
+    fprintf(file, "\n");
+    fprintf(file, "msg: %c\n", msg->msg);
+    fprintf(file, "level: %d\n", msg->level);
+    fprintf(file, "difficulty: %d\n", msg->difficulty);
+    fprintf(file, "input: %s\n", msg->input);
+
+    fprintf(file, "\ndroneInfo:\n");
+    fprintf(file, "  x: %d\n", msg->drone.x);
+    fprintf(file, "  y: %d\n", msg->drone.y);
+    fprintf(file, "  speedX: %.2f\n", msg->drone.speedX);
+    fprintf(file, "  speedY: %.2f\n", msg->drone.speedY);
+    fprintf(file, "  forceX: %.2f\n", msg->drone.forceX);
+    fprintf(file, "  forceY: %.2f\n", msg->drone.forceY);
+
+    fprintf(file, "\nTargets:\n");
+    for(int i = 0; i < MAX_TARGET; i++ ){
+            fprintf(file, "targ[%d] = %d,%d,%d\n", i, msg->targets.x[i], msg->targets.y[i], msg->targets.value[i]);
+        }
+
+    fprintf(file, "\nObstacles:\n");
+    for(int i = 0; i < MAX_OBSTACLES; i++ ){
+            fprintf(file, "obs[%d] = %d,%d\n", i, msg->obstacles.x[i], msg->obstacles.y[i]);
+            fflush(file);
+        }
+    fflush(file);
+}
+
+void msgInit(Message* status){
+    status->msg = 'R';
+    status->level = 0;
+    status->difficulty =0;
+    strcpy(status->input,"Reset");
+    status->drone.x = 0;
+    status->drone.y = 0;
+    status->drone.speedX = 0;
+    status->drone.speedY = 0;
+    status->drone.forceX = 0;
+    status->drone.forceY = 0;
+    
+    for(int i = 0; i < MAX_TARGET; i++){
+        status->targets.x[i] = 0;
+        status->targets.y[i] = 0;
+        status->targets.value[i] = 0;
+    }
+
+    for(int i = 0; i < MAX_OBSTACLES; i++){
+        status->obstacles.x[i] = 0;
+        status->obstacles.y[i] = 0;
+    }
+}
+
+void inputMsgInit(inputMessage* status){
+    status->msg = 'R';
+    strcpy(status->name,"Default");
+    strcpy(status->input,"Reset");
+    status->difficulty =0;
+    status->level = 0;
+    status->score = 0;
+    status->droneInfo.x = 0;
+    status->droneInfo.y = 0;
+    status->droneInfo.speedX = 0;
+    status->droneInfo.speedY = 0;
+    status->droneInfo.forceX = 0;
+    status->droneInfo.forceY = 0;
 }
 
 void handler(int id) {
@@ -305,4 +350,10 @@ void handler(int id) {
     timeinfo = localtime(&rawtime);
     strftime(log_entry, sizeof(log_entry), "%H:%M:%S", timeinfo);
     writeSecure("log/log.txt", log_entry, id + 3, 'o');
+}
+
+// Funzione helper per ottenere il timestamp formattato
+void getFormattedTime(char *buffer, size_t size) {
+    time_t currentTime = time(NULL);
+    snprintf(buffer, size, "%.*s", (int)(strlen(ctime(&currentTime)) - 1), ctime(&currentTime));
 }

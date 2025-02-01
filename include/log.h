@@ -9,17 +9,12 @@
 
 // Macro di configurazione
 #define MAX_LINE_LENGTH 100
-#define USE_DEBUG 0
+#define USE_DEBUG 1
 
 // Variabili globali
 static FILE *logFile = NULL;
 char difficultyStr[10];
 
-// Funzione helper per ottenere il timestamp formattato
-static inline void getFormattedTime(char *buffer, size_t size) {
-    time_t currentTime = time(NULL);
-    snprintf(buffer, size, "%.*s", (int)(strlen(ctime(&currentTime)) - 1), ctime(&currentTime));
-}
 
 // Macro per il logging della configurazione
 #define LOGCONFIG(status) {                                                      \
@@ -132,12 +127,13 @@ static inline void getFormattedTime(char *buffer, size_t size) {
                                                                                  \
     fprintf(logFile, "%s New target hit. Targets hit:\n", date);            \
     for (int t = 0; t < MAX_TARGET; t++) {                                       \
-        if (status.targets.value[t] == 0) {        \
+        if (status.targets.value[t] == 0 && t < numTarget+1) {        \
         fprintf(logFile, "(%d, %d)", status.targets.x[t], status.targets.y[t]); \
         } \
     } \
-    fflush(logFile);  \ 
-}
+    fprintf(logFile, "\n");\
+    fflush(logFile);  \
+}    
 
 #define LOGPROCESSDIED(pid) { \
     if (!logFile) {                                                              \
