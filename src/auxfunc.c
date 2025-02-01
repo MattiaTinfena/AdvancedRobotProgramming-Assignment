@@ -15,13 +15,6 @@ int incTime = 10;
 int incTarget = 1;
 int incObstacle = 1;
 
-// int levelTime = 0;
-// int numTarget = 0;
-// int numObstacle = 0;
-// int incTime = 0;
-// int incTarget = 0;
-// int incObstacle = 0;
-
 const char *moves[] = {"upleft", "up", "upright", "left", "center", "right", "downleft", "down", "downright"};
 char jsonBuffer[MAX_FILE_SIZE];
 
@@ -300,7 +293,9 @@ void printMessageToFile(FILE *file, Message* msg) {
     for(int i = 0; i < MAX_TARGET; i++ ){
             fprintf(file, "targ[%d] = %d,%d,%d\n", i, msg->targets.x[i], msg->targets.y[i], msg->targets.value[i]);
         }
+
     fprintf(file, "incTarg: %d\n", msg->targets.incr);
+
 
     fprintf(file, "\nObstacles:\n");
     for(int i = 0; i < MAX_OBSTACLES; i++ ){
@@ -360,4 +355,10 @@ void handler(int id) {
     timeinfo = localtime(&rawtime);
     strftime(log_entry, sizeof(log_entry), "%H:%M:%S", timeinfo);
     writeSecure("log/log.txt", log_entry, id + 3, 'o');
+}
+
+// Funzione helper per ottenere il timestamp formattato
+void getFormattedTime(char *buffer, size_t size) {
+    time_t currentTime = time(NULL);
+    snprintf(buffer, size, "%.*s", (int)(strlen(ctime(&currentTime)) - 1), ctime(&currentTime));
 }

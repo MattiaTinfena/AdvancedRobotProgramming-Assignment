@@ -22,6 +22,8 @@
 #define FORCE_THRESHOLD 5 //[m]
 #define MIN_THRESHOLD 2 //[m]
 
+#define MAX_FORCE 0.5 //
+
 #define TARGET_DETECTION 1
 
 #define len_str_targets 6 * MAX_TARGET + 2
@@ -41,6 +43,7 @@ extern int numObstacle;
 extern int incTime;
 extern int incTarget;
 extern int incObstacle;
+
 
 
 typedef struct {
@@ -116,4 +119,6 @@ void printInputMessageToFile(FILE *file, inputMessage* msg);
 void printMessageToFile(FILE *file, Message* msg);
 void msgInit(Message* status);
 void inputMsgInit(inputMessage* status);
+void getFormattedTime(char *buffer, size_t size);
+
 #endif
