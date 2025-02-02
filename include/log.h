@@ -56,7 +56,6 @@ char difficultyStr[10];
         default: \
             fprintf(logFile, "%s Status: Unknown.\n", date); \
     }                                                                             \
-                                                                                 \
     fflush(logFile);                                                             \
 }
 

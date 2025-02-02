@@ -118,4 +118,4 @@ extern FILE *droneFile;
 #define LOGFORCES(force_d, force_t, force_o) {}
 #endif
 
-#endif // LOG_H
+#endif // DRONE_H

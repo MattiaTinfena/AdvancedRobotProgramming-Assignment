@@ -11,40 +11,9 @@
 #include <signal.h>
 #include <cjson/cJSON.h>
 #include "keyboardMap.h"
+#include "input.h"
 
-// process that ask or receive
-#define askwr 1
-#define askrd 0
-#define recwr 3
-#define recrd 2
 
-#define HEIGHT  50
-#define WIDTH   80
-
-#define BUTTONS     9   
-#define BTNSIZEC    10
-#define BTNSIZER    5
-#define BTNDISTC    11
-#define BTNDISTR    5
-#define BTNPOSC    20
-#define BTNPOSR    20
-
-#define LEFTUP    0
-#define UP        1
-#define RIGHTUP   2
-#define LEFT      3
-#define CENTER    4
-#define RIGHT     5
-#define LEFTDOWN  6
-#define DOWN      7
-#define RIGHTDOWN 8
-
-#define DEFAULT 0
-#define MENU 1
-
-#define CHOOSENAME 0
-#define CHOOSEBUTTON 1
-#define CHOOSEDIFF 2
 
 int nh, nw;
 float scaleh = 1.0, scalew = 1.0;
@@ -70,8 +39,8 @@ WINDOW * winBut[9];
 WINDOW * win;
 WINDOW* control;
 
-FILE *settingsfile;
-FILE *file;
+FILE *settingsfile = NULL;
+FILE *inputFile = NULL;
 
 Drone_bb drone = {0, 0};
 Force force = {0, 0};
@@ -88,9 +57,8 @@ void sig_handler(int signo) {
     if (signo == SIGUSR1) {
         handler(INPUT);
     }else if(signo == SIGTERM){
-        fprintf(file, "Input is quitting\n");
-        fflush(file);   
-        fclose(file);
+        LOGPROCESSDIED();
+        fclose(inputFile);
         close(fds[recrd]);
         close(fds[askwr]);
         exit(EXIT_SUCCESS);
@@ -329,32 +297,25 @@ void mainMenu(){
     setBtns();
     disp = CHOOSEDIFF;
     setDifficulty();
+    LOGCONFIG(inputStatus);
     
     werase(stdscr);
     wrefresh(stdscr);
 
     inputStatus.msg = 'A';
     strncpy(inputStatus.input, "left", 10);
-    printInputMessageToFile(file, &inputStatus);
 
     writeInputMsg(fds[askwr], &inputStatus, 
-                "Error sending settings", file);
+                "Error sending settings", inputFile);
 
     readInputMsg(fds[recrd], &inputStatus, 
-                "Error reading ack", file);
+                "Error reading ack", inputFile);
 
-    if(inputStatus.msg == 'A'){
-        fprintf(file, "Ack received\n");
-        fflush(file);
-    }else{
-        fprintf(file, "Error receiving ack\n");
-        fflush(file);
-    }
+    LOGACK(inputStatus);
 
     readInputMsg(fds[recrd], &inputStatus, 
-                "Error reading drone info", file);
-    
-    printInputMessageToFile(file, &inputStatus);
+                "Error reading drone info", inputFile);
+    LOGDRONEINFO(inputStatus.droneInfo);
 
 }
 
@@ -397,9 +358,6 @@ void drawInfo() {
         // Calcola la colonna per centrare l'intera combinazione
         int col = ((nw / 2) - totalLen) / 2;
 
-        // fprintf(file,"Row: %d, Col: %d\n", initialrow + i, col);
-        // fflush(file);
-
         // Stampa la riga centrata
         mvwprintw(control, initialrow + i, col, "%s%s", droneInfoText[i], droneInfoStr[i]);
         wrefresh(control);
@@ -418,8 +376,8 @@ void drawInfo() {
         // Calcola la colonna per centrare l'intera combinazione
         int col = ((nw / 2) - textLen) / 2;
 
-        // fprintf(file,"Row: %d, Col: %d\n", initialrow + i, col);
-        // fflush(file);
+        // fprintf(inputFile,"Row: %d, Col: %d\n", initialrow + i, col);
+        // fflush(inputFile);
 
         // Stampa la riga centrata
         mvwprintw(control, initialrow2 + i, col, "%s", menuBtn[i]);
@@ -442,8 +400,8 @@ void drawInfo() {
     // Calcola la colonna per centrare l'intera combinazione
     int col = ((nw / 2) - textLen) / 2;
 
-    // fprintf(file,"Row: %d, Col: %d\n", initialrow + i, col);
-    // fflush(file);
+    // fprintf(inputFile,"Row: %d, Col: %d\n", initialrow + i, col);
+    // fflush(inputFile);
 
     // Stampa la riga centrata
     mvwprintw(control, initialrow3 + i, col, "%s", playerInfo);
@@ -531,9 +489,6 @@ void resizeHandler(int sig){
 }
 
 void readConfig() {
-    
-    fprintf(file,"Reading configuration file\n");
-    fflush(file);
 
     int len = fread(jsonBuffer, 1, sizeof(jsonBuffer), settingsfile); 
     fclose(settingsfile);
@@ -559,20 +514,7 @@ void readConfig() {
 
     // Per array
     cJSON *numbersArray = cJSON_GetObjectItemCaseSensitive(json, "DefaultBTN"); // questo è un array
-    int arraySize = cJSON_GetArraySize(numbersArray);
-    fprintf(file,"Array size: %d\n", arraySize);
-    fflush(file);
-
-    fprintf(file,"BtnValues:");
-    fflush(file);
-
-    for (int i = 0; i < arraySize; ++i) {
-        cJSON *element = cJSON_GetArrayItem(numbersArray, i);
-        if (cJSON_IsNumber(element)) {
-            fprintf(file,"%d,", btnValues[i] = element->valueint);
-            fflush(file);
-        }
-    }
+    LOGINPUTCONFIGURATION(numbersArray);
 
     // Leggi i dati dei giocatori
     cJSON *playersArray = cJSON_GetObjectItemCaseSensitive(json, "Players");
@@ -598,8 +540,6 @@ void updateLeaderboard() {
     currentPlayer.score = inputStatus.score;
     currentPlayer.level = inputStatus.level;
 
-    // fprintf(file, "Player: %s, Score: %d\n", currentPlayer.name, currentPlayer.score );
-    // fflush(file);
     // Trova la posizione corretta per il giocatore corrente
     int position = -1;
     
@@ -609,13 +549,6 @@ void updateLeaderboard() {
         i--;
     }
 
-    // for(int i = 0; i < 10; i++){
-    //      fprintf(file, "lb[%d]:%d\n",i,leaderboard[i].score);
-    //     fflush(file);
-    // }
-
-    // fprintf(file, "\nposition: %d\n", position);
-    // fflush(file);
     // Se il giocatore corrente non supera nessuno dei giocatori esistenti, esci
     if (position == -1) {
         return;
@@ -627,6 +560,7 @@ void updateLeaderboard() {
     }
 
     leaderboard[position] = currentPlayer;
+    LOGLEADERBOARD(leaderboard);
 }
 
 void updatePlayersInConfig() {
@@ -673,6 +607,7 @@ void updatePlayersInConfig() {
 
     char *jsonString = cJSON_Print(json);  // Usa cJSON_Print per la formattazione
     fprintf(settingsfile, "%s", jsonString);
+    fflush(settingsfile);
 
     // Pulisci la memoria
     free(jsonString);
@@ -680,10 +615,11 @@ void updatePlayersInConfig() {
     fclose(settingsfile);
 }
 
-
 void saveGame(){
+    LOGAMESAVING();
     updateLeaderboard();
     updatePlayersInConfig();
+    LOGAMESAVED();
 }
 
 
@@ -694,9 +630,9 @@ int main(int argc, char *argv[]) {
     }
     
     // Opening log file
-    file = fopen("log/outputinput.txt", "a");
+    inputFile = fopen("log/input.log", "a");
      
-    if (file == NULL) {
+    if (inputFile == NULL) {
         perror("Errore nell'apertura del file");
         exit(1);
     }
@@ -710,19 +646,8 @@ int main(int argc, char *argv[]) {
 
     readConfig();
 
-    fprintf(file, "\nLevelTime: %d\n", levelTime);
-    fprintf(file, "TimeIncrement: %d\n", incTime);
-    fprintf(file, "TargetNumber: %d\n", numTarget);
-    fprintf(file, "ObstacleNumber: %d\n", numObstacle);
-    fprintf(file, "TargetIncrement: %d\n", incTarget);
-    fprintf(file, "ObstacleIncrement: %d\n", incObstacle);
-
-    // for (int i = 0; i < 10; i++) {
-    //     strcpy(leaderboard[i].name, "Default");
-    //     leaderboard[i].score = 10 - i;
-    //     leaderboard[i].level = 10 - i;
-    // }
-
+    LOGLEADERBOARD(leaderboard);
+    LOGAMESETTINGS();
 
     // FDs reading
     char *fd_str = argv[1];
@@ -829,12 +754,12 @@ int main(int argc, char *argv[]) {
                     btn = 112; //Pause
                     inputStatus.msg = 'P';
                     mode = PAUSE;
+                    LOGSTUATUS(mode);
+                    LOGDRONEINFO(inputStatus.droneInfo);
                 } else if (ch == MY_KEY_q || ch == MY_KEY_Q){
                     btn = 109; //Quit
                     inputStatus.msg = 'q';
 
-                    // fprintf(file,"sending quit: %s\n",inputStatus.msg);
-                    // fflush(file);
                 }else{
                     btn = 99;   //Any of the direction buttons pressed
                 } 
@@ -849,38 +774,30 @@ int main(int argc, char *argv[]) {
                 wrefresh(win);
                 drawBtn(99); //to make all the buttons white
 
-                fprintf(file, "Sending:\n");
-                printInputMessageToFile(file, &inputStatus);
+                LOGDIRECTION(inputStatus.input);
 
                 // Send the message to the blackboard
                 
                 writeInputMsg(fds[askwr], &inputStatus, 
-                            "[INPUT] Error sending message", file);
+                            "[INPUT] Error sending message", inputFile);
 
                 readInputMsg(fds[recrd], &inputStatus, 
-                            "Error reading ack", file);
+                            "Error reading ack", inputFile);
                 if(inputStatus.msg == 'A'){
-                    fprintf(file,"Received:\n");
-                    printInputMessageToFile(file, &inputStatus);
+                    LOGACK(inputStatus);
                 }
-                if(inputStatus.msg == 'S'){
-                    fprintf(file, "save received");
-                    fflush(file);
-                    
+                if(inputStatus.msg == 'S'){                    
                     saveGame();
 
                     inputStatus.msg = 'R';
 
                     writeInputMsg(fds[askwr], &inputStatus, 
-                            "[INPUT] Error sending message", file);
+                            "[INPUT] Error sending message", inputFile);
                     
                 }
 
             }  
         }else if(mode == PAUSE){
-
-            fprintf(file,"Mode: PAUSE\n");
-            fflush(file);
 
             while ((ch = getch()) != MY_KEY_P && ch != MY_KEY_p && ch != MY_KEY_Q && ch != MY_KEY_q) {
                 pauseMenu();
@@ -890,13 +807,12 @@ int main(int argc, char *argv[]) {
                 
                 wrefresh(stdscr);
                 mode = PLAY;
-                fprintf(file,"Mode: PLAY\n");
-                fflush(file);
+                LOGSTUATUS(mode);
                 inputStatus.msg = 'P';
                 strcpy(inputStatus.input, "reset");
 
                 writeInputMsg(fds[askwr], &inputStatus, 
-                            "[INPUT] Error sending play", file);
+                            "[INPUT] Error sending play", inputFile);
 
             }else if(ch == MY_KEY_Q || ch == MY_KEY_q){
 
@@ -905,21 +821,18 @@ int main(int argc, char *argv[]) {
                 strcpy(inputStatus.input, "reset");
 
                 writeInputMsg(fds[askwr], &inputStatus, 
-                            "[INPUT] Error sending play", file);
+                            "[INPUT] Error sending play", inputFile);
 
                 readInputMsg(fds[recrd], &inputStatus, 
-                            "Error reading ack", file);
+                            "Error reading ack", inputFile);
 
                 if(inputStatus.msg == 'S'){
-                    fprintf(file, "save received");
-                    fflush(file);
-                    
                     saveGame();
 
                     inputStatus.msg = 'R';
                     
                     writeInputMsg(fds[askwr], &inputStatus, 
-                            "[INPUT] Error sending message", file);
+                            "[INPUT] Error sending message", inputFile);
                     
                 }
             }

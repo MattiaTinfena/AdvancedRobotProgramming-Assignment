@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
     fdsRead(argc, argv, fds);
 
     // Opening log file
-    droneFile = fopen("log/outputdrone.log", "a");
+    droneFile = fopen("log/drone.log", "a");
     if (droneFile == NULL) {
         perror("[DRONE] Error during the file opening");
         exit(EXIT_FAILURE);

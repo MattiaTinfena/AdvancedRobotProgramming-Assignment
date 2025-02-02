@@ -610,15 +610,7 @@ int main(int argc, char *argv[]) {
         status.difficulty = inputStatus.difficulty;
     }
 
-    //LOGCONFIG(inputStatus);
-
-    // fprintf(file, "LevelTime: %d\n", levelTime);
-    // fprintf(file, "TimeIncrement: %d\n", incTime);
-    // fprintf(file, "TargetNumber: %d\n", numTarget);
-    // fprintf(file, "ObstacleNumber: %d\n", numObstacle);
-    // fprintf(file, "TargetIncrement: %d\n", incTarget);
-    // fprintf(file, "ObstacleIncrement: %d\n", incObstacle);
-
+    LOGCONFIG(inputStatus);
 
     mapInit(file);
 
