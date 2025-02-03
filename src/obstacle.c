@@ -10,6 +10,7 @@
 #include "auxfunc.h"
 #include <signal.h>
 #include <math.h>
+#include "obstacle.h"
 
 // process that ask or receive
 #define askwr 1
@@ -26,16 +27,15 @@ int fds[4];
 Message status;
 
 
-FILE *file;
+FILE *obstFile = NULL;
 
 void sig_handler(int signo) {
     if (signo == SIGUSR1)
     {
         handler(OBSTACLE);
     }else if(signo == SIGTERM){
-        fprintf(file, "Obstacle is quitting\n");
-        fflush(file);   
-        fclose(file);
+        LOGPROCESSDIED() 
+        fclose(obstFile);
         close(fds[recrd]);
         close(fds[askwr]);
         exit(EXIT_SUCCESS);
@@ -86,9 +86,9 @@ int main(int argc, char *argv[]) {
     fdsRead(argc, argv, fds);
 
     // Opening log file
-    file = fopen("log/outputobstacle.txt", "a");
-    if (file == NULL) {
-        perror("Errore nell'apertura del file");
+    obstFile = fopen("log/obstacle.log", "a");
+    if (obstFile == NULL) {
+        perror("Errore nell'apertura del obstFile");
         exit(1);
     }
 
@@ -113,18 +113,15 @@ int main(int argc, char *argv[]) {
 
         // Read drone position
         readMsg(fds[recrd], &status,
-            "[OBSTACLE] Error reading drone and target position from [BB]", file);
+            "[OBSTACLE] Error reading drone and target position from [BB]", obstFile);
 
         createObstacles();
-
-        fprintf(file, "Obstacle created:\n");
-        for(int i = 0; i < MAX_TARGET; i++ ){
-        fprintf(file, "obst[%d] = %d,%d\n", i, status.obstacles.x[i], status.obstacles.y[i]);
-        }
-        fprintf(file,"obstincr: %d", status.obstacles.incr);
-        fflush(file);
+        LOGNEWMAP(status);
+        
+        // fprintf(obstFile,"obstincr: %d", status.obstacles.incr);
+        // fflush(obstFile);
         writeMsg(fds[askwr], &status, 
-            "[OBSTACLE] Error sending obstacle positions to [BB]", file);
+            "[OBSTACLE] Error sending obstacle positions to [BB]", obstFile);
 
         usleep(100000);
     }

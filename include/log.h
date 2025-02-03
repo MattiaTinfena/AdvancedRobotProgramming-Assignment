@@ -12,7 +12,7 @@
 #define USE_DEBUG 1
 
 // Variabili globali
-static FILE *logFile = NULL;
+extern FILE *logFile;
 char difficultyStr[10];
 
 
@@ -59,6 +59,43 @@ char difficultyStr[10];
     fflush(logFile);                                                             \
 }
 
+#define LOGAMESAVING() { \
+    if (!logFile) {                                                             \
+        perror("Log file not initialized.\n");                                   \
+        return;                                                                  \
+    }                                                                            \
+                                                                                 \
+    char date[50];                                                               \
+    getFormattedTime(date, sizeof(date));                                        \
+    fprintf(logFile, "%s Saving the game.\n", date); \
+    fflush(logFile); \
+}
+
+#define LOGAMESAVED() { \
+    if (!logFile) {                                                             \
+        perror("Log file not initialized.\n");                                   \
+        return;                                                                  \
+    }                                                                            \
+                                                                                 \
+    char date[50];                                                               \
+    getFormattedTime(date, sizeof(date));                                        \
+    fprintf(logFile, "%s Game saved.\n", date); \
+    fflush(logFile); \
+}
+
+#define LOGQUIT(){ \
+    if (!logFile) {                                                             \
+        perror("Log file not initialized.\n");                                   \
+        return;                                                                  \
+    }                                                                            \
+                                                                                 \
+    char date[50];                                                               \
+    getFormattedTime(date, sizeof(date));                                        \
+    fprintf(logFile, "%s Quitting the game.\n", date); \
+    fflush(logFile); \
+    }
+
+
 #define LOGNEWMAP(status) {                                                      \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
@@ -101,7 +138,7 @@ char difficultyStr[10];
 }
 
 // Macro per loggare il completamento di un livello
-#define LOGLEVEL(status, inputStatus) {                                          \
+#define LOGENDLEVEL(status, inputStatus) {                                       \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
         return;                                                                  \
@@ -148,10 +185,23 @@ char difficultyStr[10];
     fflush(logFile);                                                             \
 } 
 
+#define LOGBBDIED() { \
+    if (!logFile) {                                                              \
+        perror("Log file not initialized.\n");                                   \
+        return;                                                                  \
+    }                                                                            \
+                                                                                 \
+    char date[50];                                                               \
+    getFormattedTime(date, sizeof(date));                                           \
+    fprintf(logFile, "%s Blackboard is quitting\n", date);                              \
+    fflush(logFile); \
+}
+
 #if USE_DEBUG
 #define LOGPLAYERINFO(status) {    \
     LOGCONFIG(status); \
     fprintf(logFile,"Score: %d\n", status.score);   \
+    fflush(logFile); \
 }
 #else
 #define LOGPLAYERINFO(status) {}
@@ -176,4 +226,49 @@ char difficultyStr[10];
 #else
 #define LOGDRONEINFO(droneInfo) {}
 #endif
+
+#if USE_DEBUG
+#define LOGPROCESSELECTED(selected) {   \
+    if (!logFile) {                                                              \
+        perror("Log file not initialized.\n");                                   \
+        return;                                                                  \
+    }                                                                            \
+                                                                            \
+    char process[10]; \
+    switch (selected) { \
+        case DRONE: \
+            strcpy(process, "Drone"); \
+            break; \
+        case INPUT: \
+            strcpy(process, "Input"); \
+            break; \
+        case OBSTACLE: \
+            strcpy(process, "Obstacle or Target"); \
+            break; \
+        default: \
+            strcpy(process, "Not valid"); \
+        }  \             
+    char date[50];                                                               \
+    getFormattedTime(date, sizeof(date));                                        \
+    fprintf(logFile, "%s Process selected: %s", date, process); \
+}
+#else
+#define LOGPROCESSELECTED(selected) {}
+#endif
+
+#if USE_DEBUG
+#define LOGINPUTMESSAGE(inputMsg) {\
+    if (!logFile) { \
+        perror("Log file not initialized.\n"); \
+        return; \
+    } \
+    char date[50]; \
+    getFormattedTime(date, sizeof(date)); \
+    fprintf(logFile, "%s Direction: %s.\n", date, inputMsg.input); \
+    fflush(logFile); \
+}
+#else
+#define LOGINPUTMESSAGE(inputMsg) {}
+#endif
+
 #endif // LOG_H
