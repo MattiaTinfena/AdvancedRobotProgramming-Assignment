@@ -17,7 +17,7 @@ extern FILE *targFile;
 #define LOGNEWMAP(status) {                                                      \
     if (!targFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -38,7 +38,7 @@ extern FILE *targFile;
 #define LOGPROCESSDIED() { \
     if (!targFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -51,7 +51,7 @@ extern FILE *targFile;
 #define LOGDRONEINFO(dronebb){ \
     if (!targFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \

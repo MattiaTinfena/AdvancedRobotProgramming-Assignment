@@ -18,7 +18,7 @@ extern FILE *droneFile;
 #define LOGNEWMAP(status) {                                                      \
     if (!droneFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -45,7 +45,7 @@ extern FILE *droneFile;
 #define LOGPROCESSDIED() { \
     if (!droneFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -58,7 +58,7 @@ extern FILE *droneFile;
 #define LOGPOSITION(drone) { \
     if (!droneFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -74,7 +74,7 @@ extern FILE *droneFile;
 #define LOGPOSITION(drone) { \
     if (!droneFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -87,7 +87,7 @@ extern FILE *droneFile;
 #define LOGDRONEINFO(dronebb){ \
     if (!droneFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -103,7 +103,7 @@ extern FILE *droneFile;
 #define LOGFORCES(force_d, force_t, force_o) { \
     if (!droneFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \

@@ -277,7 +277,7 @@ int randomSelect(int n) {
     return random_number % n;
 }
 
-void detectCollision(Message* status, Drone_bb * prev, FILE* file) {
+void detectCollision(Message* status, Drone_bb * prev) {
     
     for (int i = 0; i < numTarget + status->targets.incr; i++) {
         
@@ -405,6 +405,7 @@ void quit(){
 }
 
 int main(int argc, char *argv[]) {
+    signal(SIGTERM, handleLogFailure); // Register handler for logging errors
 
     // Log file opening
     file = fopen("log/outputbb.txt", "w");
@@ -470,8 +471,8 @@ int main(int argc, char *argv[]) {
     close(fds[TARGET][recrd]);
 
     // Reading buffer
-    char data[80];
-    ssize_t bytesRead;
+    // char data[80];
+    // ssize_t bytesRead;
     fd_set readfds;
     struct timeval tv;
     
@@ -652,7 +653,7 @@ int main(int argc, char *argv[]) {
         if(ready > 0){
             unsigned int rand = randomSelect(ready);
             int selected = fdsQueue[rand];
-            detectCollision(&status, &prevDrone, file);
+            detectCollision(&status, &prevDrone);
 
             if (selected == fds[DRONE][askrd]){
                 LOGPROCESSELECTED(DRONE);

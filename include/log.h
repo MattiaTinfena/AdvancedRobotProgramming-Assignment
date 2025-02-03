@@ -20,7 +20,7 @@ char difficultyStr[10];
 #define LOGCONFIG(status) {                                                      \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -40,7 +40,7 @@ char difficultyStr[10];
 #define LOGSTUATUS(mode) {                                                     \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -62,7 +62,7 @@ char difficultyStr[10];
 #define LOGAMESAVING() { \
     if (!logFile) {                                                             \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -74,7 +74,7 @@ char difficultyStr[10];
 #define LOGAMESAVED() { \
     if (!logFile) {                                                             \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -86,7 +86,7 @@ char difficultyStr[10];
 #define LOGQUIT(){ \
     if (!logFile) {                                                             \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -99,7 +99,7 @@ char difficultyStr[10];
 #define LOGNEWMAP(status) {                                                      \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -126,7 +126,7 @@ char difficultyStr[10];
 #define LOGENDGAME(status, inputStatus) {                                        \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -141,7 +141,7 @@ char difficultyStr[10];
 #define LOGENDLEVEL(status, inputStatus) {                                       \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -155,7 +155,7 @@ char difficultyStr[10];
 #define LOGTARGETHIT(status) { \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -174,7 +174,7 @@ char difficultyStr[10];
 #define LOGPROCESSDIED(pid) { \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -188,7 +188,7 @@ char difficultyStr[10];
 #define LOGBBDIED() { \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -201,7 +201,7 @@ char difficultyStr[10];
 #define LOGDRONEINFO(droneInfo) { \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -221,10 +221,10 @@ char difficultyStr[10];
 #define LOGPROCESSELECTED(selected) {   \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                             \
-    char process[10]; \
+    char process[20]; \
     switch (selected) { \
         case DRONE: \
             strcpy(process, "Drone"); \
@@ -250,7 +250,7 @@ char difficultyStr[10];
 #define LOGINPUTMESSAGE(inputMsg) {\
     if (!logFile) { \
         perror("Log file not initialized.\n"); \
-        return; \
+        raise(SIGTERM); \
     } \
     char date[50]; \
     getFormattedTime(date, sizeof(date)); \

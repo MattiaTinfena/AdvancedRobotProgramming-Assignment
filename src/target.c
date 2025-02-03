@@ -38,7 +38,7 @@ int canSpawnPrev(int x_pos, int y_pos) {
     return 1;
 }
 
-createTargets() {
+void createTargets() {
     int x_pos, y_pos;
 
     for (int i = 0; i < numTarget + status.targets.incr; i++)
@@ -95,7 +95,8 @@ void sig_handler(int signo) {
 }
 
 int main(int argc, char *argv[]) {
-   
+    signal(SIGTERM, handleLogFailure); // Register handler for logging errors
+
     fdsRead(argc, argv, fds);
     
     // Opening log file

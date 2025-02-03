@@ -54,7 +54,7 @@ typedef struct
 } Drone;
 
 
-void updatePosition(Drone *p, Force force, int mass, Speed *speed, Speed *speedPrev, FILE* droneFile) {
+void updatePosition(Drone *p, Force force, int mass, Speed *speed, Speed *speedPrev) {
 
     float x_pos = (2*mass*p->previous_x[0] + PERIOD*K*p->previous_x[0] + force.x*PERIOD*PERIOD - mass * p->previous_x[1]) / (mass + PERIOD * K);
     float y_pos = (2*mass*p->previous_y[0] + PERIOD*K*p->previous_y[0] + force.y*PERIOD*PERIOD - mass * p->previous_y[1]) / (mass + PERIOD * K);
@@ -85,12 +85,10 @@ void updatePosition(Drone *p, Force force, int mass, Speed *speed, Speed *speedP
     speed->x = speedX;
     speed->y = speedY;
 
-    fflush(droneFile);
-
 
 }
 
-void drone_force(float mass, float K, char* direction) {
+void drone_force(char* direction) {
     
     if (strcmp(direction, "") != 0) {
         // Imposta direzione x
@@ -120,7 +118,7 @@ void drone_force(float mass, float K, char* direction) {
 
 }
 
-void obstacle_force(Drone *drone, Obstacles* obstacles, FILE* droneFile) {
+void obstacle_force(Drone *drone, Obstacles* obstacles) {
     float deltaX, deltaY, distance;
     force_o.x = 0;
     force_o.y = 0;
@@ -145,7 +143,7 @@ void obstacle_force(Drone *drone, Obstacles* obstacles, FILE* droneFile) {
 
 }
 
-void target_force(Drone *drone, Targets* targets, FILE* droneFile) {
+void target_force(Drone *drone, Targets* targets) {
     
     float deltaX, deltaY, distance;
     force_t.x = 0;
@@ -170,7 +168,7 @@ void target_force(Drone *drone, Targets* targets, FILE* droneFile) {
 
 }
 
-Force total_force(Force drone, Force obstacle, Force target, FILE* droneFile){
+Force total_force(Force drone, Force obstacle, Force target){
     Force total;
     total.x = drone.x + obstacle.x + target.x;
     total.y = drone.y + obstacle.y + target.y;
@@ -193,14 +191,14 @@ void sig_handler(int signo) {
 }
 
 void newDrone (Drone* drone, Targets* targets, Obstacles* obstacles, char* directions, FILE* droneFile, char inst){
-    target_force(drone, targets, droneFile);
-    obstacle_force(drone, obstacles, droneFile);
+    target_force(drone, targets);
+    obstacle_force(drone, obstacles);
     if(inst == 'I'){
-        drone_force(DRONEMASS, K, directions);
+        drone_force(directions);
     }
-    force = total_force(force_d, force_o, force_t, droneFile);
+    force = total_force(force_d, force_o, force_t);
 
-    updatePosition(drone, force, DRONEMASS, &speed,&speedPrev, droneFile);
+    updatePosition(drone, force, DRONEMASS, &speed,&speedPrev);
 }
 
 void droneUpdate(Drone* drone, Speed* speed, Force* force, Message* msg) {
@@ -237,6 +235,7 @@ void mapInit(Drone* drone, Message* status, Message* msg){
 }
 
 int main(int argc, char *argv[]) {
+    signal(SIGTERM, handleLogFailure); // Register handler for logging errors
     
     fdsRead(argc, argv, fds);
 
@@ -284,7 +283,7 @@ int main(int argc, char *argv[]) {
     }
     obstacles.incr = 0;
 
-    char data[200];
+    // char data[200];
 
    mapInit(&drone, &status, &msg);
    LOGNEWMAP(status);

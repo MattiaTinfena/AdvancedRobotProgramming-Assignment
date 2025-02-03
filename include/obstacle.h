@@ -18,7 +18,7 @@ extern FILE *obstFile;
 #define LOGNEWMAP(status) {                                                      \
     if (!obstFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -44,7 +44,7 @@ extern FILE *obstFile;
 #define LOGNEWMAP(status) {                                                      \
     if (!obstFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -64,7 +64,7 @@ extern FILE *obstFile;
 #define LOGPROCESSDIED() { \
     if (!obstFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
@@ -77,7 +77,7 @@ extern FILE *obstFile;
 #define LOGDRONEINFO(dronebb){ \
     if (!obstFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
+        raise(SIGTERM);                                                                  \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \

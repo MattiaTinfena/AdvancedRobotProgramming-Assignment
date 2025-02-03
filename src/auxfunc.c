@@ -18,6 +18,15 @@ int incObstacle = 1;
 const char *moves[] = {"upleft", "up", "upright", "left", "center", "right", "downleft", "down", "downright"};
 char jsonBuffer[MAX_FILE_SIZE];
 
+void handleLogFailure(int sig) {
+    printf("Logging failed. Cleaning up resources...\n");
+
+    // Perform necessary cleanup here (close files, free memory, etc.)
+    //ASK MATTIA
+   
+    exit(EXIT_FAILURE);
+}
+
 int writeSecure(char* filename, char* data, int numeroRiga, char mode) {
     if (mode != 'o' && mode != 'a') {
         fprintf(stderr, "Modalità non valida. Usa 'o' per overwrite o 'a' per append.\n");

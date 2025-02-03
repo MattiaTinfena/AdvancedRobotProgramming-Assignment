@@ -106,6 +106,7 @@ typedef struct {
 
 extern char jsonBuffer[MAX_FILE_SIZE];
 
+void handleLogFailure(int sig);
 int writeSecure(char* filename, char* data, int numeroRiga, char mode);
 int readSecure(char* filename, char* data, int numeroRiga);
 void handler(int id);
