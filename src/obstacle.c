@@ -114,6 +114,7 @@ int main(int argc, char *argv[]) {
         // Read drone position
         readMsg(fds[recrd], &status,
             "[OBSTACLE] Error reading drone and target position from [BB]", obstFile);
+        LOGDRONEINFO(status.drone);
 
         createObstacles();
         LOGNEWMAP(status);

@@ -73,35 +73,6 @@ extern FILE *obstFile;
     fflush(obstFile);                                                             \
 }
 
-#if USE_DEBUG
-#define LOGPOSITION(drone) { \
-    if (!obstFile) {                                                              \
-        perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
-    }                                                                            \
-                                                                                 \
-    char date[50];                                                               \
-    getFormattedTime(date, sizeof(date));                                        \
-    fprintf(obstFile, "%s Drone info. \n", date); \
-    fprintf(obstFile, "\tPre-previous position (%d, %d) \n", (int)(drone.previous_x[1]), (int)round(drone.previous_y[1])); \
-    fprintf(obstFile, "\tPrevious position (%d, %d) \n", (int)round(drone.previous_x[0]), (int)round(drone.previous_y[0])); \
-    fprintf(obstFile, "\tActual position (%d, %d)\n", (int)round(drone.x), (int)round(drone.y)); \
-    fflush(obstFile); \
-}
-
-#else 
-#define LOGPOSITION(drone) { \
-    if (!obstFile) {                                                              \
-        perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
-    }                                                                            \
-                                                                                 \
-    char date[50];                                                               \
-    getFormattedTime(date, sizeof(date));                                        \
-    fprintf(obstFile, "%s Position (%d, %d) ", date, (int)round(drone.x), (int)round(drone.y)); \
-    fflush(obstFile); \
-}
-#endif
 
 #define LOGDRONEINFO(dronebb){ \
     if (!obstFile) {                                                              \
@@ -111,30 +82,9 @@ extern FILE *obstFile;
                                                                                  \
     char date[50];                                                               \
     getFormattedTime(date, sizeof(date));                                        \
-    fprintf(obstFile, "%s Position (%d, %d) ", date, dronebb.x, dronebb.y); \
-    fprintf(obstFile, "Speed (%.2f, %.2f) ", dronebb.speedX, dronebb.speedY); \
-    fprintf(obstFile, "Force (%.2f, %.2f) ", dronebb.forceX, dronebb.forceY); \
-    fprintf(obstFile, "\n"); \
+    fprintf(obstFile, "%s Drone position (%d, %d)\n", date, dronebb.x, dronebb.y); \
     fflush(obstFile); \
 }
 
-#if USE_DEBUG
-#define LOGFORCES(force_d, force_t, force_o) { \
-    if (!obstFile) {                                                              \
-        perror("Log file not initialized.\n");                                   \
-        return;                                                                  \
-    }                                                                            \
-                                                                                 \
-    char date[50];                                                               \
-    getFormattedTime(date, sizeof(date));                                        \
-    fprintf(obstFile, "%s Forces on the drone - ", date); \
-    fprintf(obstFile, "Drone force (%.2f, %.2f) ", force_d.x, force_d.y); \
-    fprintf(obstFile, "Target force (%.2f, %.2f) ", force_t.x, force_t.y); \
-    fprintf(obstFile, "Obstacle force (%.2f, %.2f)\n", force_o.x, force_o.y); \
-    fflush(obstFile); \
-}
-#else
-#define LOGFORCES(force_d, force_t, force_o) {}
-#endif
 
-#endif // OSTACLE_H
+#endif // OBSTACLE_H

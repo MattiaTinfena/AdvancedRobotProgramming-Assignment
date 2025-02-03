@@ -10,6 +10,7 @@
 #include "auxfunc.h"
 #include <signal.h>
 #include <math.h>
+#include "target.h"
 
 // process that ask or receive
 #define askwr 1
@@ -22,7 +23,7 @@
 
 int pid;
 int fds[4]; 
-FILE *file;
+FILE *targFile = NULL;
 
 
 Message status;
@@ -63,33 +64,30 @@ void refreshMap(){
 
     // send drone position to target
     writeMsg(fds[askwr], &status, 
-            "[TARGET] Ready not sended correctly", file);
-
-        printMessageToFile(file, &status);
+            "[TARGET] Ready not sended correctly", targFile);
 
 
     status.msg = '\0';
 
     readMsg(fds[recrd], &status,
-            "[TARGET] Error reading drone position from [BB]", file);
+            "[TARGET] Error reading drone position from [BB]", targFile);
+    LOGDRONEINFO(status.drone);
 
-        printMessageToFile(file, &status);
 
     createTargets();             // Create target vector
+    LOGNEWMAP(status);
 
-        printMessageToFile(file, &status);
 
     writeMsg(fds[askwr], &status, 
-            "[TARGET] Error sending target position to [BB]", file);
+            "[TARGET] Error sending target position to [BB]", targFile);
 }
 
 void sig_handler(int signo) {
     if (signo == SIGUSR1) {
         handler(TARGET);
     }else if(signo == SIGTERM){
-        fprintf(file, "Target is quitting\n");
-        fflush(file);   
-        fclose(file);
+        LOGPROCESSDIED(); 
+        fclose(targFile);
         close(fds[recrd]);
         close(fds[askwr]);
         exit(EXIT_SUCCESS);
@@ -101,8 +99,8 @@ int main(int argc, char *argv[]) {
     fdsRead(argc, argv, fds);
     
     // Opening log file
-    file = fopen("log/outputtarget.txt", "a");
-    if (file == NULL) {
+    targFile = fopen("log/target.log", "a");
+    if (targFile == NULL) {
         perror("Errore nell'apertura del file");
         exit(1);
     }
@@ -117,23 +115,18 @@ int main(int argc, char *argv[]) {
     signal(SIGUSR1, sig_handler);
     signal(SIGTERM,sig_handler);
 
-    fprintf(file, "Ready to read the drone position\n");
-    fflush(file);
 
     readMsg(fds[recrd], &status,
-            "[TARGET] Error reading drone position from [BB]", file);
+            "[TARGET] Error reading drone position from [BB]", targFile);
 
-    printMessageToFile(file, &status);
+    LOGDRONEINFO(status.drone);
 
     createTargets();             // Create target vector
-
-    printMessageToFile(file, &status);
+    LOGNEWMAP(status);
 
     writeMsg(fds[askwr], &status, 
-            "[TARGET] Error sending target position to [BB]", file);
+            "[TARGET] Error sending target position to [BB]", targFile);
     
-    fprintf(file,"New targets sent");
-    fflush(file);
 
     while (1) {
 

@@ -52,7 +52,7 @@ FILE *file = NULL;
 FILE *logFile = NULL;
 
 
-Drone_bb prevDrone = {0, 0};
+Drone_bb prevDrone = {0, 0, 0, 0, 0, 0};
 
 Message status;
 Message msg;
@@ -105,6 +105,17 @@ void resizeHandler(int sig){
     noecho();
     win = newwin(nh, nw, 0, 0);
     map = newwin(nh - 2, nw, 2, 0); 
+}
+
+void resetTargetValue(Message* status){
+    for(int i = 0; i < MAX_TARGET; i++){
+        if(i < numTarget + status->targets.incr){
+            status->targets.value[i] = i + 1;
+        }
+        else{
+            status->targets.value[i] = 0;
+        }
+    }
 }
 
 void mapInit(FILE *file){
@@ -344,16 +355,6 @@ void createNewMap(){
     }
 }
 
-void resetTargetValue(Message* status){
-    for(int i = 0; i < MAX_TARGET; i++){
-        if(i < numTarget + status->targets.incr){
-            status->targets.value[i] = i + 1;
-        }
-        else{
-            status->targets.value[i] = 0;
-        }
-    }
-}
 
 void closeAll(){
 
@@ -664,7 +665,7 @@ int main(int argc, char *argv[]) {
                 if(msg.msg == 'R'){
                     if (collision) {
                         LOGTARGETHIT(status);
-                        LOGPLAYERINFO(inputStatus);
+                        LOGCONFIG(inputStatus);
                         collision = 0;
 
                         // fprintf(file, "Send new map to [DRONE]\n");

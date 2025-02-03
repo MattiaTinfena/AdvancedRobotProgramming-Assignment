@@ -32,8 +32,8 @@ char difficultyStr[10];
     default: strcpy(difficultyStr, "Unknown"); \
     }                                                                             \
                                                                                  \
-    fprintf(logFile, "%s Player Name: %s, Difficulty: %s, Level: %d\n",          \
-            date, (status).name, difficultyStr, (status).level);                 \
+    fprintf(logFile, "%s Player Name: %s, Difficulty: %s, Level: %d, Score: %d\n",          \
+            date, (status).name, difficultyStr, (status).level, status.score);                 \
     fflush(logFile);                                                             \
 }
 
@@ -198,16 +198,6 @@ char difficultyStr[10];
 }
 
 #if USE_DEBUG
-#define LOGPLAYERINFO(status) {    \
-    LOGCONFIG(status); \
-    fprintf(logFile,"Score: %d\n", status.score);   \
-    fflush(logFile); \
-}
-#else
-#define LOGPLAYERINFO(status) {}
-#endif
-
-#if USE_DEBUG
 #define LOGDRONEINFO(droneInfo) { \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
@@ -247,7 +237,7 @@ char difficultyStr[10];
             break; \
         default: \
             strcpy(process, "Not valid"); \
-        }  \             
+        }                                                                       \
     char date[50];                                                               \
     getFormattedTime(date, sizeof(date));                                        \
     fprintf(logFile, "%s Process selected: %s", date, process); \

@@ -75,8 +75,6 @@ extern FILE *inputFile;
     fflush(inputFile); \
 }
 
-
-
 char difficultyStr[10];
 #define LOGCONFIG(status) {                                                      \
     if (!inputFile) {                                                              \
@@ -197,7 +195,6 @@ char difficultyStr[10];
     fflush(inputFile); \
 }
 
-#include <string.h>  // Needed for strcpy
 
 #define LOGDIRECTION(direction) { \
     if (!inputFile) { \
