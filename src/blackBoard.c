@@ -76,6 +76,7 @@ void sig_handler(int signo) {
     } else if (signo == SIGTERM) {
         LOGBBDIED();
         fclose(file);
+        fclose(logFile);
         close(fds[DRONE][recwr]);
         close(fds[DRONE][askrd]);
         close(fds[INPUT][recwr]);
@@ -94,7 +95,7 @@ void storePreviousPosition(Drone_bb *drone) {
     prevDrone.y = drone ->y;
 }
 
-void resizeHandler(int sig){
+void resizeHandler(){
     getmaxyx(stdscr, nh, nw);  /* get the new screen size */
     scaleh = ((float)(nh - 2) / (float)WINDOW_LENGTH);
     scalew = (float)nw / (float)WINDOW_WIDTH;
@@ -369,6 +370,7 @@ void closeAll(){
     }
     LOGBBDIED();
     fclose(file);
+    fclose(logFile);
     exit(EXIT_SUCCESS);
 
 }
@@ -454,8 +456,8 @@ int main(int argc, char *argv[]) {
     char dataWrite [80] ;
     snprintf(dataWrite, sizeof(dataWrite), "b%d,", pid);
 
-    if(writeSecure("log/log.txt", dataWrite,1,'a') == -1){
-        perror("Error in writing in log.txt");
+    if(writeSecure("log/passParam.txt", dataWrite,1,'a') == -1){
+        perror("Error in writing in passParan.txt");
         exit(1);
     }
     
@@ -503,8 +505,8 @@ int main(int argc, char *argv[]) {
     usleep(500000);
 
     char datareaded[200];
-    if (readSecure("log/log.txt", datareaded,1) == -1) {
-        perror("Error reading the log file");
+    if (readSecure("log/passParam.txt", datareaded,1) == -1) {
+        perror("Error reading the passParam file");
         exit(1);
     }
 
@@ -570,9 +572,17 @@ int main(int argc, char *argv[]) {
         if (remainingTime < 0){
             elapsedTime = 0;
             LOGENDGAME(status, inputStatus);
-            mvwprintw(map, nh/2, nw/2, "Time's up! Game over!");
-            mvwprintw(map, nh/2 + 1, nw/2,"Press q to quit");
-            wrefresh(map);            
+
+            int y_center = (nh - 2) / 2;
+            int x_center = nw / 2;
+
+            const char *msg1 = "Time's up! Game over!";
+            const char *msg2 = "Press q to quit";
+
+            mvwprintw(map, y_center, x_center - strlen(msg1) / 2, "%s", msg1);
+            mvwprintw(map, y_center + 1, x_center - strlen(msg2) / 2, "%s", msg2);
+            wrefresh(map);
+
             quit(); 
         }
 
@@ -582,13 +592,21 @@ int main(int argc, char *argv[]) {
         }
 
         if (targetsHit >= numTarget + status.targets.incr) {
-            LOGENDLEVEL(status, inputStatus);
-            status.level++;
+                LOGENDLEVEL(status, inputStatus);
+                status.level++;
 
-            if(status.level > 5){
-                mvwprintw(map, nh/2, nw/2, "Congratulations! You Won!");
-                mvwprintw(map, nh/2 + 1, nw/2,"Press q to quit");
+                if(status.level > 5){
+
+                int y_center = (nh - 2) / 2;
+                int x_center = nw / 2;
+
+                const char *msg1 = "Congratulations! You Won!";
+                const char *msg2 = "Press q to quit";
+
+                mvwprintw(map, y_center, x_center - strlen(msg1) / 2, "%s", msg1);
+                mvwprintw(map, y_center + 1, x_center - strlen(msg2) / 2, "%s", msg2);
                 wrefresh(map);
+
                 quit();
             }
                 
@@ -597,8 +615,14 @@ int main(int argc, char *argv[]) {
             status.obstacles.incr = status.level*status.difficulty*incObstacle;
             msg.targets.incr = status.targets.incr;
             msg.obstacles.incr = status.obstacles.incr;
-            // fprintf(file, "incr: %d,%d\n", status.targets.incr,status.obstacles.incr);
-            // fflush(file);
+
+            if(numTarget + status.targets.incr > MAX_TARGET){
+                status.targets.incr = MAX_TARGET - numTarget;
+            }
+
+            if(numObstacle + status.obstacles.incr > MAX_OBSTACLES){
+                status.obstacles.incr = MAX_OBSTACLES - numObstacle;
+            }
             targetsHit = 0;
             elapsedTime = 0;
             collision = 0;

@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    pid = writePid("log/log.txt", 'a', 1, 'o');
+    pid = writePid("log/passParam.txt", 'a', 1, 'o');
 
     // Closing unused pipes heads to avoid deadlock
     close(fds[askrd]);

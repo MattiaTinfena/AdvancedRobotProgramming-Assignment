@@ -37,7 +37,7 @@ Speed speed = {0, 0};
 Targets targets;
 Obstacles obstacles;
 Message status;
-Message msg;
+
 
 int pid;
 int fds[4];
@@ -190,7 +190,7 @@ void sig_handler(int signo) {
     }
 }
 
-void newDrone (Drone* drone, Targets* targets, Obstacles* obstacles, char* directions, FILE* droneFile, char inst){
+void newDrone (Drone* drone, Targets* targets, Obstacles* obstacles, char* directions, char inst){
     target_force(drone, targets);
     obstacle_force(drone, obstacles);
     if(inst == 'I'){
@@ -211,7 +211,7 @@ void droneUpdate(Drone* drone, Speed* speed, Force* force, Message* msg) {
     msg->drone.forceY = force->y;
 }
 
-void mapInit(Drone* drone, Message* status, Message* msg){
+void mapInit(Drone* drone, Message* status){
 
     
     msgInit(status);
@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    pid = writePid("log/log.txt", 'a', 1, 'd');
+    pid = writePid("log/passParam.txt", 'a', 1, 'd');
 
     // Closing unused pipes heads to avoid deadlock
     close(fds[askrd]);
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
 
     // char data[200];
 
-   mapInit(&drone, &status, &msg);
+   mapInit(&drone, &status);
    LOGNEWMAP(status);
 
     while (1)
@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
             case 'M':
                 LOGNEWMAP(status);
 
-                newDrone(&drone, &status.targets, &status.obstacles, directions,droneFile,status.msg);
+                newDrone(&drone, &status.targets, &status.obstacles, directions, status.msg);
                 droneUpdate(&drone, &speed, &force, &status);
 
                 // drone sends its position to BB
@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
 
                 strcpy(directions, status.input);
 
-                newDrone(&drone, &status.targets, &status.obstacles, directions,droneFile,status.msg);
+                newDrone(&drone, &status.targets, &status.obstacles, directions, status.msg);
                 droneUpdate(&drone, &speed, &force, &status);
                 LOGDRONEINFO(status.drone);
 
@@ -330,7 +330,7 @@ int main(int argc, char *argv[]) {
                 break;
             case 'A':
                 
-                newDrone(&drone, &status.targets, &status.obstacles, directions,droneFile,status.msg);
+                newDrone(&drone, &status.targets, &status.obstacles, directions, status.msg);
                 droneUpdate(&drone, &speed, &force, &status);
 
                 //LOGPOSITION(drone);

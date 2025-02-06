@@ -19,13 +19,13 @@ int pids[PROCESSTOCONTROL] = {0};  // Initialize PIDs to 0
 struct timeval start, end;
 long elapsed_ms;
 
-FILE *file;
+FILE *wdFile;
 
 void sig_handler(int signo) {
     if(signo == SIGTERM){
-        fprintf(file, "Watchdog is quitting\n");
-        fflush(file);   
-        fclose(file);
+        fprintf(wdFile, "Watchdog is quitting\n");
+        fflush(wdFile);   
+        fclose(wdFile);
         exit(EXIT_SUCCESS);
     }
 }
@@ -34,22 +34,22 @@ void closeAll(int id){
     for(int i  = 0; i < PROCESSTOCONTROL; i++){
         if (i != id) {
             if (kill(pids[i], SIGTERM) == -1) {
-                fprintf(file,"Process %d is not responding or has terminated\n", pids[i]);
-                fflush(file);
+                fprintf(wdFile,"Process %d is not responding or has terminated\n", pids[i]);
+                fflush(wdFile);
             }
         }
     }
-    fprintf(file, "Watchdog is quitting all because %d is dead\n", id);
-    fflush(file);
-    fclose(file);
+    fprintf(wdFile, "Watchdog is quitting all because %d is dead\n", id);
+    fflush(wdFile);
+    fclose(wdFile);
     exit(EXIT_SUCCESS);
 }
 
 int main() {
-    // Open the output file for writing
-    file = fopen("log/outputWD.txt", "w");
-    if (file == NULL) {
-        perror("Error opening the file");
+    // Open the output wdFile for writing
+    wdFile = fopen("log/outputWD.log", "w");
+    if (wdFile == NULL) {
+        perror("Error opening the wdFile");
         exit(1);
     }
 
@@ -57,16 +57,16 @@ int main() {
     char dataWrite [80] ;
     snprintf(dataWrite, sizeof(dataWrite), "w%d,", pid);
 
-    if(writeSecure("log/log.txt", dataWrite,1,'a') == -1){
-        perror("Error in writing in log.txt");
+    if(writeSecure("log/passParam.txt", dataWrite,1,'a') == -1){
+        perror("[WATCHDOG] Error in writing in passParam.txt");
         exit(1);
     }
 
     sleep(1);
 
     char datareaded[200];
-    if (readSecure("log/log.txt", datareaded,1) == -1) {
-        perror("Error reading the log file");
+    if (readSecure("log/passParam.txt", datareaded,1) == -1) {
+        perror("Error reading the passParam wdFile");
         exit(1);
     }
 
@@ -93,18 +93,18 @@ int main() {
         token = strtok(NULL, ",");
     }
 
-    // Write the PID values to the output file
-    for (int i = 0; i < PROCESSTOCONTROL; i++) {
-        fprintf(file, "pid[%d] = %d\n", i, pids[i]);
-        fflush(file);
-    }
+    // // Write the PID values to the output wdFile
+    // for (int i = 0; i < PROCESSTOCONTROL; i++) {
+    //     fprintf(wdFile, "pid[%d] = %d\n", i, pids[i]);
+    //     fflush(wdFile);
+    // }
 
     signal(SIGTERM, sig_handler);
 
     for (int i = 0; i < PROCESSTOCONTROL; i++) {
             if (kill(pids[i], SIGUSR1) == -1) {
-                fprintf(file,"Process %d is not responding or has terminated\n", pids[i]);
-                fflush(file);
+                fprintf(wdFile,"Process %d is not responding or has terminated\n", pids[i]);
+                fflush(wdFile);
                 closeAll(i);
             }
         usleep(10000);
@@ -121,8 +121,8 @@ int main() {
             interval = 0;
             for (int i = 0; i < PROCESSTOCONTROL; i++) {
                     if (kill(pids[i], SIGUSR1) == -1) {
-                        fprintf(file,"Process %d is not responding or has terminated\n", pids[i]);
-                        fflush(file);
+                        fprintf(wdFile,"Process %d is not responding or has terminated\n", pids[i]);
+                        fflush(wdFile);
                         closeAll(i);
                     }
                 usleep(10000);
@@ -137,9 +137,9 @@ int main() {
 
         char timeReaded[80];
         for(int i = 0; i < PROCESSTOCONTROL; i++){
-            if(readSecure("log/log.txt", timeReaded, i + 3) == -1){
-                perror("Error reading the log file");
-                fclose(file);
+            if(readSecure("log/passParam.txt", timeReaded, i + 3) == -1){
+                perror("Error reading the passParam wdFile");
+                fclose(wdFile);
                 exit(1);
             }
 
@@ -156,8 +156,8 @@ int main() {
         } 
     }                 
     
-    //Close the file
-    fclose(file);
+    //Close the wdFile
+    fclose(wdFile);
 
     return 0;
 }

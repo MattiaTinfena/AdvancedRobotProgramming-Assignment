@@ -8,7 +8,7 @@
 #include "auxfunc.h"
 #include <time.h>
 
-int levelTime = 40;
+int levelTime = 3;//30;
 int numTarget = 4;
 int numObstacle = 9;
 int incTime = 10;
@@ -18,7 +18,7 @@ int incObstacle = 1;
 const char *moves[] = {"upleft", "up", "upright", "left", "center", "right", "downleft", "down", "downright"};
 char jsonBuffer[MAX_FILE_SIZE];
 
-void handleLogFailure(int sig) {
+void handleLogFailure() {
     printf("Logging failed. Cleaning up resources...\n");
 
     // Perform necessary cleanup here (close files, free memory, etc.)
@@ -27,7 +27,7 @@ void handleLogFailure(int sig) {
     exit(EXIT_FAILURE);
 }
 
-int writeSecure(char* filename, char* data, int numeroRiga, char mode) {
+int writeSecure(char* filename, char* data, unsigned long numeroRiga, char mode) {
     if (mode != 'o' && mode != 'a') {
         fprintf(stderr, "Modalità non valida. Usa 'o' per overwrite o 'a' per append.\n");
         return -1;
@@ -59,7 +59,7 @@ int writeSecure(char* filename, char* data, int numeroRiga, char mode) {
 
     // Legge tutto il file in memoria
     char** righe = NULL;  // Array di righe
-    size_t numRighe = 0;  // Numero di righe
+    unsigned long numRighe = 0;  // Numero di righe
     char buffer[1024];    // Buffer per leggere ogni riga
 
     while (fgets(buffer, sizeof(buffer), file)) {
@@ -74,10 +74,11 @@ int writeSecure(char* filename, char* data, int numeroRiga, char mode) {
     }
 
     // Modifica o aggiunge righe
-    if (numeroRiga > numRighe) {
+    if (numeroRiga > numRighe){
+
         // Aggiungi righe vuote fino alla riga richiesta
         righe = realloc(righe, numeroRiga * sizeof(char*));
-        for (size_t i = numRighe; i < numeroRiga - 1; i++) {
+        for (unsigned long i = numRighe; i < numeroRiga - 1; i++) {
             righe[i] = strdup("\n");  // Righe vuote
         }
         righe[numeroRiga - 1] = strdup(data);  // Nuova riga
@@ -90,7 +91,7 @@ int writeSecure(char* filename, char* data, int numeroRiga, char mode) {
             righe[numeroRiga - 1] = strdup(data);
         } else if (mode == 'a') {
             // Rimuovi il newline alla fine della riga esistente
-            size_t len = strlen(righe[numeroRiga - 1]);
+            unsigned long len = strlen(righe[numeroRiga - 1]);
             if (len > 0 && righe[numeroRiga - 1][len - 1] == '\n') {
                 righe[numeroRiga - 1][len - 1] = '\0';
             }
@@ -109,7 +110,7 @@ int writeSecure(char* filename, char* data, int numeroRiga, char mode) {
 
     // Riscrive il contenuto nel file
     rewind(file);
-    for (size_t i = 0; i < numRighe; i++) {
+    for (unsigned long i = 0; i < numRighe; i++) {
         fprintf(file, "%s", righe[i]);
         if (righe[i][strlen(righe[i]) - 1] != '\n') {
             fprintf(file, "\n");  // Aggiungi newline se mancante
@@ -138,7 +139,7 @@ int writeSecure(char* filename, char* data, int numeroRiga, char mode) {
     return 0;
 }
 
-int readSecure(char* filename, char* data, int numeroRiga) {
+int readSecure(char* filename, char* data, unsigned long numeroRiga) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
         perror("Errore nell'apertura del file");
@@ -164,7 +165,7 @@ int readSecure(char* filename, char* data, int numeroRiga) {
     }
 
     // Leggi fino alla riga richiesta
-    int rigaCorrente = 1;
+    unsigned long rigaCorrente = 1;
     char buffer[1024];  // Buffer temporaneo per leggere le righe
     while (fgets(buffer, sizeof(buffer), file)) {
         if (rigaCorrente == numeroRiga) {
@@ -178,7 +179,7 @@ int readSecure(char* filename, char* data, int numeroRiga) {
 
     // Controlla se abbiamo raggiunto la riga desiderata
     if (rigaCorrente < numeroRiga) {
-        fprintf(stderr, "Errore: Riga %d non trovata nel file.\n", numeroRiga);
+        fprintf(stderr, "Errore: Riga %ld non trovata nel file.\n", numeroRiga);
         flock(fd, LOCK_UN);
         fclose(file);
         return -1;
@@ -258,7 +259,7 @@ int writePid(char* file, char mode, int row, char id){
     snprintf(dataWrite, sizeof(dataWrite), "%c%d,",id, pid);
 
     if (writeSecure(file, dataWrite, row, mode) == -1) {
-        perror("Error in writing in log.txt");
+        perror("Error in writing in passParam.txt");
         exit(1);
     }
 
@@ -363,11 +364,11 @@ void handler(int id) {
     time(&rawtime);
     timeinfo = localtime(&rawtime);
     strftime(log_entry, sizeof(log_entry), "%H:%M:%S", timeinfo);
-    writeSecure("log/log.txt", log_entry, id + 3, 'o');
+    writeSecure("log/passParam.txt", log_entry, id + 3, 'o');
 }
 
 // Funzione helper per ottenere il timestamp formattato
-void getFormattedTime(char *buffer, size_t size) {
+void getFormattedTime(char *buffer, unsigned long size) {
     time_t currentTime = time(NULL);
     snprintf(buffer, size, "%.*s", (int)(strlen(ctime(&currentTime)) - 1), ctime(&currentTime));
 }

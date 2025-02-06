@@ -130,7 +130,7 @@ void setName() {
     wrefresh(stdscr);
 
     int ch = 0;
-    int pos = strlen(inputStatus.name); // Inizializza la posizione in base alla lunghezza del nome esistente
+    unsigned long pos = strlen(inputStatus.name); // Inizializza la posizione in base alla lunghezza del nome esistente
 
     while (ch != MY_KEY_ENTER) {
         ch = getch(); // Legge il prossimo carattere premuto
@@ -279,8 +279,6 @@ void pauseMenu(){
     const char *prompt = "Press P to play";
     const char *prompt2 = "Press Q to save & quit";
     int prompt_row = nh / 2 - 2; // Riga leggermente sopra il centro
-    int name_row = nh / 2;     // Riga per il nome
-    int error_row = nh / 2 + 2; // Riga per i messaggi di errore
 
     mvwprintw(stdscr, prompt_row, (nw - strlen(prompt)) / 2, "%s", prompt);
     mvwprintw(stdscr, prompt_row + 1, (nw - strlen(prompt)) / 2, "%s", prompt2);
@@ -321,7 +319,7 @@ void mainMenu(){
 
 void drawInfo() {
 
-    //Menu part1
+    //Menu part 1
 
     int initialrow = (int)((nh/3) - 6)/2 > 0 ? (int)((nh/3) - 6)/2 : 0;
     char droneInfoStr[6][20];
@@ -384,14 +382,15 @@ void drawInfo() {
         wrefresh(control);
     }
 
-    // Menu part 2 
+    // Menu part 3 
 
     int initialrow3 = ((2 * nh / 3) + ((nh / 3 - 10) / 2) > 0) ? (( 2 * nh / 3) + ((nh / 3 - 10) / 2)) : (2 * nh / 3);
     
+    mvwprintw(control, initialrow3 - 1, ((nw / 2) - strlen("LEADERBOARD:")) / 2, "%s", "LEADERBOARD:");
     for (int i = 0; i < 10; i++) {
 
     // Crea una stringa playerInfo con i dati dei giocatori
-    char playerInfo[100];
+    char playerInfo[150];
     snprintf(playerInfo, sizeof(playerInfo), "Player: %s, score: %d, level: %d", leaderboard[i].name, leaderboard[i].score, leaderboard[i].level);
 
     // Calcola le lunghezze effettive delle stringhe
@@ -412,7 +411,7 @@ void drawInfo() {
 
 }
 
-void resizeHandler(int sig){
+void resizeHandler(){
     if (mode == PLAY){
         getmaxyx(stdscr, nh, nw);  /* get the new screen size */
         scaleh = ((float)nh / (float)WINDOW_LENGTH);
@@ -491,6 +490,10 @@ void resizeHandler(int sig){
 void readConfig() {
 
     int len = fread(jsonBuffer, 1, sizeof(jsonBuffer), settingsfile); 
+    if (len <= 0) {
+        perror("Error reading the file");
+        return;
+    }
     fclose(settingsfile);
 
     cJSON *json = cJSON_Parse(jsonBuffer); // parse the text to json object
@@ -572,6 +575,10 @@ void updatePlayersInConfig() {
 
     // Leggi il file esistente
     int len = fread(jsonBuffer, 1, sizeof(jsonBuffer), settingsfile);
+    if (len <= 0) {
+        perror("Error reading the file");
+        return;
+    }
     fclose(settingsfile);
 
     cJSON *json = cJSON_Parse(jsonBuffer);
@@ -668,8 +675,8 @@ int main(int argc, char *argv[]) {
     char dataWrite [80] ;
     snprintf(dataWrite, sizeof(dataWrite), "i%d,", pid);
 
-    if(writeSecure("log/log.txt", dataWrite,1,'a') == -1){
-        perror("Error in writing in log.txt");
+    if(writeSecure("log/passParam.txt", dataWrite,1,'a') == -1){
+        perror("[INPUT]Error in writing in passParam.txt");
         exit(1);
     }
 

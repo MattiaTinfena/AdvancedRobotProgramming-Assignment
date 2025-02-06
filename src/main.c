@@ -54,9 +54,9 @@ int main() {
         }
     }
 
-    FILE *logfile = fopen("log/log.txt", "w");
-    if (logfile == NULL) {
-        perror("Errore nell'apertura del file");
+    FILE *passParamFile = fopen("log/passParam.txt", "w");
+    if (passParamFile == NULL) {
+        perror("Errore nell'apertura del file passParam");
         exit(1);
     }
 
@@ -76,33 +76,37 @@ int main() {
             char *args[] = { NULL, fd_str[i], NULL };
 
             switch (i) {
-                case DRONE:
-                    args[0] = "./bin/drone";
-                    if (execvp(args[0], args) == -1) {
-                        perror("Errore in execvp per drone");
-                        exit(1);
+                case DRONE:{
+                        args[0] = "./bin/drone";
+                        if (execvp(args[0], args) == -1) {
+                            perror("Errore in execvp per drone");
+                            exit(1);
+                        }
                     }
                     break;
-                case INPUT:
-                    char *argi[] = {"konsole", "-e", "./bin/input", fd_str[i], NULL }; 
+                case INPUT:{
+                        char *argi[] = {"konsole", "-e", "./bin/input", fd_str[i], NULL }; 
 
-                    if (execvp(argi[0], argi) == -1) {
-                        perror("Errore in execvp per input");
-                        exit(1);
+                        if (execvp(argi[0], argi) == -1) {
+                            perror("Errore in execvp per input");
+                            exit(1);
+                        }
                     }
                     break;
-                case OBSTACLE:
-                    args[0] = "./bin/obstacle";
-                    if (execvp(args[0], args) == -1) {
-                        perror("Errore in execvp per obstacle");
-                        exit(1);
+                case OBSTACLE:{
+                        args[0] = "./bin/obstacle";
+                        if (execvp(args[0], args) == -1) {
+                            perror("Errore in execvp per obstacle");
+                            exit(1);
+                        }
                     }
                     break;
-                case TARGET:
-                    args[0] = "./bin/target";
-                    if (execvp(args[0], args) == -1) {
-                        perror("Errore in execvp per target");
-                        exit(1);
+                case TARGET:{
+                        args[0] = "./bin/target";
+                        if (execvp(args[0], args) == -1) {
+                            perror("Errore in execvp per target");
+                            exit(1);
+                        }
                     }
                     break;
                 default:
@@ -148,6 +152,8 @@ int main() {
     for (int i = 0; i < PROCESSNUM + 2; i++) { // PROCESSNUM + 2 to include blackboard and watchdog
         wait(NULL);
     }
+
+    fclose(passParamFile);
 
     return 0;
 }
