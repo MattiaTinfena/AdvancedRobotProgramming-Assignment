@@ -635,7 +635,6 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Uso: %s <fd_str>\n", argv[0]);
         exit(1);
     }
-    signal(SIGTERM, handleLogFailure); // Register handler for logging errors
     
     // Opening log file
     inputFile = fopen("log/input.log", "a");

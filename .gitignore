@@ -16,6 +16,9 @@
 # Non ignorare i file .json
 !*.json
 
+# Non ignorare i file .json
+!*.sh
+
 # Non ignorare il Makefile
 !Makefile
 

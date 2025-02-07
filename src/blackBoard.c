@@ -407,7 +407,6 @@ void quit(){
 }
 
 int main(int argc, char *argv[]) {
-    signal(SIGTERM, handleLogFailure); // Register handler for logging errors
 
     // Log file opening
     file = fopen("log/outputbb.txt", "w");

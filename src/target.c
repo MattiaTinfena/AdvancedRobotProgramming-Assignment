@@ -95,7 +95,6 @@ void sig_handler(int signo) {
 }
 
 int main(int argc, char *argv[]) {
-    signal(SIGTERM, handleLogFailure); // Register handler for logging errors
 
     fdsRead(argc, argv, fds);
     

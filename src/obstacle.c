@@ -50,7 +50,7 @@ int canSpawn(int x_pos, int y_pos) {
 }
 
 int canSpawnPrev(int x_pos, int y_pos) {
-    for (int i = 0; i < numTarget + status.obstacles.incr; i++) {
+    for (int i = 0; i < numObstacle + status.obstacles.incr; i++) {
         if (abs(x_pos - status.obstacles.x[i]) <= NO_SPAWN_DIST && abs(y_pos - status.obstacles.y[i]) <= NO_SPAWN_DIST) return 0;
     }
     return 1;
@@ -82,7 +82,6 @@ void createObstacles() {
 }
 
 int main(int argc, char *argv[]) {
-    signal(SIGTERM, handleLogFailure); // Register handler for logging errors
     fdsRead(argc, argv, fds);
 
     // Opening log file
