@@ -99,8 +99,12 @@ int main() {
     //     fflush(wdFile);
     // }
 
-    signal(SIGTERM, sig_handler);
-
+    struct sigaction sa;
+    sa.sa_handler = sig_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGTERM, &sa, NULL);
+    
     for (int i = 0; i < PROCESSTOCONTROL; i++) {
             if (kill(pids[i], SIGUSR1) == -1) {
                 fprintf(wdFile,"Process %d is not responding or has terminated\n", pids[i]);
