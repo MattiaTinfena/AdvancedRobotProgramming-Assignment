@@ -34,7 +34,7 @@ void closeAll(int id){
     for(int i  = 0; i < PROCESSTOCONTROL; i++){
         if (i != id) {
             if (kill(pids[i], SIGTERM) == -1) {
-                LOGPROCESSDIED(pid);
+                LOGPROCESSDIED(pids[i]);
             }
         }
     }

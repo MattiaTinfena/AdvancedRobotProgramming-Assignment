@@ -40,17 +40,17 @@ extern FILE *wdFile;
     fflush(wdFile);                                                             \
 } 
 
-#define LOG_PROCESS_NOT_RESPONDING(pid) {
+#define LOG_PROCESS_NOT_RESPONDING(pid) { \
     if (!wdFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
-        raise(SIGTERM);                                                                  \
+        raise(SIGTERM);                                                        \
     }                                                                            \
                                                                                  \
     char date[50];                                                               \
     getFormattedTime(date, sizeof(date));                                        \
                                                                                  \
     fprintf(wdFile, "%s Process %d not responding. ", date, pid);                  \
-    fprintf(wdFile, "Closing everything because process %d dead. \n", pid);       \
+    fprintf(wdFile, "Closing everything because process %d is dead. \n", pid);       \
     fflush(wdFile);                                                             \
 }
 

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "auxfunc.h"
 #include <time.h>
+#include <signal.h>
 
 int levelTime = 3;//30;
 int numTarget = 4;
