@@ -696,10 +696,15 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    fprintf(inputFile, "%d\n", __LINE__);
-    fflush(inputFile);
+    struct sigaction res;
+    res.sa_handler = resizeHandler;
+    sigemptyset(&res.sa_mask);
+    res.sa_flags = SA_RESTART;
 
-    signal(SIGWINCH, resizeHandler);
+    if (sigaction(SIGWINCH, &res, NULL) == -1) {
+        perror("Error while setting sigaction for SIGWINCH");
+        exit(EXIT_FAILURE);
+    }
     
 
     initscr();
