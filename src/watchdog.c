@@ -11,6 +11,7 @@
 #include "auxfunc.h"
 #include <signal.h>
 #include <time.h>
+#include "watchdog.h"
 
 #define PROCESSTOCONTROL 5
 
@@ -19,12 +20,11 @@ int pids[PROCESSTOCONTROL] = {0};  // Initialize PIDs to 0
 struct timeval start, end;
 long elapsed_ms;
 
-FILE *wdFile;
+FILE *wdFile = NULL;
 
 void sig_handler(int signo) {
     if(signo == SIGTERM){
-        fprintf(wdFile, "Watchdog is quitting\n");
-        fflush(wdFile);   
+        LOGWDDIED();
         fclose(wdFile);
         exit(EXIT_SUCCESS);
     }
@@ -34,20 +34,18 @@ void closeAll(int id){
     for(int i  = 0; i < PROCESSTOCONTROL; i++){
         if (i != id) {
             if (kill(pids[i], SIGTERM) == -1) {
-                fprintf(wdFile,"Process %d is not responding or has terminated\n", pids[i]);
-                fflush(wdFile);
+                LOGPROCESSDIED(pid);
             }
         }
     }
-    fprintf(wdFile, "Watchdog is quitting all because %d is dead\n", id);
-    fflush(wdFile);
+    LOGWDDIED();
     fclose(wdFile);
     exit(EXIT_SUCCESS);
 }
 
 int main() {
     // Open the output wdFile for writing
-    wdFile = fopen("log/outputWD.log", "w");
+    wdFile = fopen("log/watchdog.log", "w");
     if (wdFile == NULL) {
         perror("Error opening the wdFile");
         exit(1);
@@ -107,8 +105,7 @@ int main() {
     
     for (int i = 0; i < PROCESSTOCONTROL; i++) {
             if (kill(pids[i], SIGUSR1) == -1) {
-                fprintf(wdFile,"Process %d is not responding or has terminated\n", pids[i]);
-                fflush(wdFile);
+                LOG_PROCESS_NOT_RESPONDING(pids[i]);
                 closeAll(i);
             }
         usleep(10000);
@@ -125,8 +122,7 @@ int main() {
             interval = 0;
             for (int i = 0; i < PROCESSTOCONTROL; i++) {
                     if (kill(pids[i], SIGUSR1) == -1) {
-                        fprintf(wdFile,"Process %d is not responding or has terminated\n", pids[i]);
-                        fflush(wdFile);
+                        LOG_PROCESS_NOT_RESPONDING(pids[i]);
                         closeAll(i);
                     }
                 usleep(10000);

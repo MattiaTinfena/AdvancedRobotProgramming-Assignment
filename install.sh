@@ -2,7 +2,7 @@
 
 sudo apt-get update
 sudo apt-get upgrade
-sudo pt-get install --fix-missing
+sudo apt-get install --fix-missing
 
 sudo apt install terminator
 sudo apt install konsole

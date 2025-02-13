@@ -33,3 +33,8 @@
 
 #Non ignorare la cartella .vscode
 !**/src/
+
+# Non ignorare la cartella docs
+!**/docs/
+# Non ignorare i file png
+!*.png

@@ -48,7 +48,6 @@ int mode = PLAY;
 WINDOW * win;
 WINDOW * map;
 
-FILE *file = NULL;
 FILE *logFile = NULL;
 
 
@@ -409,12 +408,6 @@ void quit(){
 int main(int argc, char *argv[]) {
 
     // Log file opening
-    file = fopen("log/outputbb.txt", "w");
-    if (file == NULL) {
-        perror("Errore nell'apertura del file");
-        exit(1);
-    }
-
     logFile = fopen("log/logfile.log", "w");
     if (logFile == NULL) {
         perror("Errore nell'aprire il file di log");
