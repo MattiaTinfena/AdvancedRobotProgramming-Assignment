@@ -8,10 +8,10 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
+#include "watchdog.h"
 #include "auxfunc.h"
 #include <signal.h>
 #include <time.h>
-#include "watchdog.h"
 
 #define PROCESSTOCONTROL 5
 
@@ -29,6 +29,7 @@ void sig_handler(int signo) {
         exit(EXIT_SUCCESS);
     }
 }
+
 
 void closeAll(int id){
     for(int i  = 0; i < PROCESSTOCONTROL; i++){
@@ -81,7 +82,7 @@ int main() {
         } else if (type == 'o') {
             pids[OBSTACLE] = number;
         } else if (type == 't') {
-            pids[TARGET] = number;
+            pids[TARGET] = number;   
         } else if (type == 'b') {
             pids[BLACKBOARD] = number;
         }else{
@@ -97,11 +98,23 @@ int main() {
     //     fflush(wdFile);
     // }
 
+       
     struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
     sa.sa_handler = sig_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    sigaction(SIGTERM, &sa, NULL);
+    sa.sa_flags = SA_RESTART;  // Riavvia read/write interrotte
+    if (sigaction(SIGUSR1, &sa, NULL) == -1) {
+        perror("sigaction");
+        exit(EXIT_FAILURE);
+    }
+
+    // while(1) {
+    //     sleep(2);
+    //     if (kill(pids[TARGET], SIGUSR1) == -1) {
+    //         perror("[WATCHDOG] target not responding");
+    //         exit(1);
+    //     }
+    // }
     
     for (int i = 0; i < PROCESSTOCONTROL; i++) {
             if (kill(pids[i], SIGUSR1) == -1) {
@@ -125,7 +138,7 @@ int main() {
                         LOG_PROCESS_NOT_RESPONDING(pids[i]);
                         closeAll(i);
                     }
-                usleep(10000);
+                // usleep(10000);
             }
         }   
 

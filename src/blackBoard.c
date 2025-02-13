@@ -74,7 +74,6 @@ void sig_handler(int signo) {
         handler(BLACKBOARD);
     } else if (signo == SIGTERM) {
         LOGBBDIED();
-        fclose(file);
         fclose(logFile);
         close(fds[DRONE][recwr]);
         close(fds[DRONE][askrd]);
@@ -467,15 +466,22 @@ int main(int argc, char *argv[]) {
     // char data[80];
     // ssize_t bytesRead;
     fd_set readfds;
-    struct timeval tv;
+    struct timespec ts;
     
     //Setting select timeout
-    tv.tv_sec = 0;
-    tv.tv_usec = 1000;
+    ts.tv_sec = 0;
+    ts.tv_nsec = 1000 * 1000;
 
-    signal(SIGUSR1, sig_handler);
+    
+    struct sigaction sa;
+    sa.sa_handler = sig_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    sigaction(SIGUSR1, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
+
+    
     signal(SIGWINCH, resizeHandler);
-    signal(SIGTERM, sig_handler);
 
     initscr();
     start_color();
@@ -533,7 +539,6 @@ int main(int argc, char *argv[]) {
 
     readInputMsg(fds[INPUT][askrd], &inputStatus, 
                 "Error reading input", logFile);
-
 
     inputStatus.msg = 'A';
     writeInputMsg(fds[INPUT][recwr], &inputStatus, 
@@ -634,6 +639,11 @@ int main(int argc, char *argv[]) {
         wrefresh(win);
         wrefresh(map);
         
+        sigset_t mask;
+        sigemptyset(&mask);
+        sigaddset(&mask, SIGUSR1);
+        sigaddset(&mask, SIGTERM);
+
         //FDs setting for select
         FD_ZERO(&readfds);
         FD_SET(fds[DRONE][askrd], &readfds);
@@ -642,10 +652,12 @@ int main(int argc, char *argv[]) {
         int fdsQueue [4];
         int ready = 0;
 
-        int sel = select(nfds, &readfds, NULL, NULL, &tv);
+        
+
+        int sel = pselect(nfds, &readfds, NULL, NULL, &ts, &mask);
         
         if (sel == -1) {
-            perror("Select error");
+            perror("Pselect error");
             break;
         } 
 
@@ -750,7 +762,7 @@ int main(int argc, char *argv[]) {
                         //fflush(file);
 
                         readInputMsg(fds[INPUT][askrd], &inputMsg, 
-                                "[BB] Error reading input", file);
+                                "[BB] Error reading input", logFile);
 
                     }
                     if(inputMsg.msg == 'P'){
@@ -805,7 +817,7 @@ int main(int argc, char *argv[]) {
                     strncpy(status.input, inputMsg.input, sizeof(inputStatus.input));
                     
                     writeMsg(fds[DRONE][recwr], &status, 
-                                "[BB] Error asking drone position", file);     
+                                "[BB] Error asking drone position", logFile);     
                 }
 
                 storePreviousPosition(&status.drone);

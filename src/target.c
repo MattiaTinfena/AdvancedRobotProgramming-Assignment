@@ -112,8 +112,15 @@ int main(int argc, char *argv[]) {
     close(fds[recwr]);
 
     //Defining signals
-    signal(SIGUSR1, sig_handler);
-    signal(SIGTERM,sig_handler);
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = sig_handler;
+    sa.sa_flags = SA_RESTART;  // Riavvia read/write interrotte
+    if (sigaction(SIGUSR1, &sa, NULL) == -1) {
+        perror("sigaction");
+        exit(EXIT_FAILURE);
+    }
+
 
 
     readMsg(fds[recrd], &status,
