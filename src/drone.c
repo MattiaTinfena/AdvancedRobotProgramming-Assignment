@@ -11,6 +11,7 @@
 #include <math.h>
 #include <signal.h>
 #include "drone.h"
+#include "cjson/cJSON.h"
 
 // process that ask or receive
 #define askwr 1
@@ -19,11 +20,14 @@
 #define recrd 2
 
 #define PERIOD 10 //50 //[Hz]
-#define DRONEMASS 1
 
 #define MAX_DIRECTIONS 80
 
+int numTarget = 5;
+int numObstacle = 5;
+
 float K = 1.0;
+float droneMass = 1.0;
 
 Force force_d = {0, 0};
 Force force_o = {0, 0};
@@ -43,7 +47,7 @@ int pid;
 int fds[4];
 
 FILE *droneFile = NULL;
-
+FILE *settingsfile = NULL;
 typedef struct
 {
     float x;
@@ -198,7 +202,7 @@ void newDrone (Drone* drone, Targets* targets, Obstacles* obstacles, char* direc
     }
     force = total_force(force_d, force_o, force_t);
 
-    updatePosition(drone, force, DRONEMASS, &speed,&speedPrev);
+    updatePosition(drone, force, droneMass, &speed,&speedPrev);
 }
 
 void droneUpdate(Drone* drone, Speed* speed, Force* force, Message* msg) {
@@ -234,6 +238,28 @@ void mapInit(Drone* drone, Message* status){
             "[DRONE] Error receiving map from BB", droneFile);
 }
 
+void readConfig() {
+
+    int len = fread(jsonBuffer, 1, sizeof(jsonBuffer), settingsfile); 
+    if (len <= 0) {
+        perror("Error reading the file");
+        return;
+    }
+    fclose(settingsfile);
+
+    cJSON *json = cJSON_Parse(jsonBuffer); // parse the text to json object
+
+    if (json == NULL) {
+        perror("Error parsing the file");
+    }
+
+    // Aggiorna le variabili globali
+    K = cJSON_GetObjectItemCaseSensitive(json, "kDrone")->valuedouble;
+    droneMass = cJSON_GetObjectItemCaseSensitive(json, "massDrone")->valuedouble;
+    
+    cJSON_Delete(json); // pulisci
+}
+
 int main(int argc, char *argv[]) {
     
     fdsRead(argc, argv, fds);
@@ -245,11 +271,20 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    //Open config file
+    settingsfile = fopen("appsettings.json", "r");
+    if (settingsfile == NULL) {
+        perror("Error opening the file");
+        return EXIT_FAILURE;//1
+    }
+
     pid = writePid("log/passParam.txt", 'a', 1, 'd');
 
     // Closing unused pipes heads to avoid deadlock
     close(fds[askrd]);
     close(fds[recwr]);
+
+    readConfig();
 
     //Defining signals
     struct sigaction sa;

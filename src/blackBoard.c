@@ -14,6 +14,7 @@
 #include "auxfunc.h"
 #include <signal.h>
 #include "log.h"
+#include "cjson/cJSON.h"
 
 // process to whom that asked or received
 #define askwr 1
@@ -45,11 +46,18 @@ int pid;
 int fds[4][4] = {0};
 int mode = PLAY;
 
+int levelTime = 0;//30;
+int numTarget = 0;
+int numObstacle = 0;
+int incTime = 0;
+int incTarget = 0;
+int incObstacle = 0;
+
 WINDOW * win;
 WINDOW * map;
 
 FILE *logFile = NULL;
-
+FILE *settingsfile = NULL;
 
 Drone_bb prevDrone = {0, 0, 0, 0, 0, 0};
 
@@ -68,6 +76,7 @@ float resetMap = MAPRESET; // [s]
 float elapsedTime = 0;
 int remainingTime = 0;
 char difficultyStr[10];
+
 
 void sig_handler(int signo) {
     if (signo == SIGUSR1) {
@@ -117,13 +126,13 @@ void resetTargetValue(Message* status){
     }
 }
 
-void mapInit(FILE *file){
+void mapInit(){
 
     // read initial drone position
     readMsg(fds[DRONE][askrd], &status,
                 "[BB] Error reading drone position\n", logFile);
     LOGDRONEINFO(status.drone);
-
+    
     status.level = inputStatus.level;
     status.difficulty = inputStatus.difficulty;
 
@@ -132,9 +141,6 @@ void mapInit(FILE *file){
 
     msg.targets.incr = status.targets.incr;
     msg.obstacles.incr = status.obstacles.incr;
-
-    // fprintf(file, "incr: %d,%d\n", status.targets.incr,status.obstacles.incr);
-    // fflush(file);
 
     resetTargetValue(&status);
     // printMessageToFile(file, &status);
@@ -403,6 +409,33 @@ void quit(){
     }          
 }
 
+void readConfig() {
+
+    int len = fread(jsonBuffer, 1, sizeof(jsonBuffer), settingsfile); 
+    if (len <= 0) {
+        perror("Error reading the file");
+        return;
+    }
+    fclose(settingsfile);
+
+    cJSON *json = cJSON_Parse(jsonBuffer); // parse the text to json object
+
+    if (json == NULL) {
+        perror("Error parsing the file");
+    }
+
+    // Aggiorna le variabili globali
+    levelTime = cJSON_GetObjectItemCaseSensitive(json, "LevelTime")->valueint;
+    incTime = cJSON_GetObjectItemCaseSensitive(json, "TimeIncrement")->valueint;
+    numTarget = cJSON_GetObjectItemCaseSensitive(json, "TargetNumber")->valueint;
+    numObstacle = cJSON_GetObjectItemCaseSensitive(json, "ObstacleNumber")->valueint;
+    incTarget = cJSON_GetObjectItemCaseSensitive(json, "TargetIncrement")->valueint;
+    incObstacle = cJSON_GetObjectItemCaseSensitive(json, "ObstacleIcrement")->valueint;
+
+    cJSON_Delete(json); // pulisci
+}
+
+
 int main(int argc, char *argv[]) {
 
     // Log file opening
@@ -451,6 +484,12 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     
+    //Open config file
+    settingsfile = fopen("appsettings.json", "r");
+    if (settingsfile == NULL) {
+        perror("Error opening the file");
+        return EXIT_FAILURE;//1
+    }
 
     // closing the unused fds to avoid deadlock
     close(fds[DRONE][askwr]);
@@ -477,16 +516,18 @@ int main(int argc, char *argv[]) {
     sa.sa_handler = sig_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
-    sigaction(SIGUSR1, &sa, NULL);
-    sigaction(SIGTERM, &sa, NULL);
 
-    
-    struct sigaction res;
-    res.sa_handler = resizeHandler;
-    sigemptyset(&res.sa_mask);
-    res.sa_flags = SA_RESTART;
+    if (sigaction(SIGUSR1, &sa, NULL) == -1) {
+        perror("Error while setting sigaction for SIGWINCH");
+        exit(EXIT_FAILURE);
+    }
 
-    if (sigaction(SIGWINCH, &res, NULL) == -1) {
+    if (sigaction(SIGTERM, &sa, NULL) == -1) {
+        perror("Error while setting sigaction for SIGWINCH");
+        exit(EXIT_FAILURE);
+    }
+
+    if (sigaction(SIGWINCH, &sa, NULL) == -1) {
         perror("Error while setting sigaction for SIGWINCH");
         exit(EXIT_FAILURE);
     }
@@ -543,6 +584,9 @@ int main(int argc, char *argv[]) {
         fflush(logFile);
     }
 
+    readConfig();
+
+    // fprintf(file,)
     inputStatus.score = 0;
 
     readInputMsg(fds[INPUT][askrd], &inputStatus, 
@@ -564,8 +608,6 @@ int main(int argc, char *argv[]) {
 
     mapInit(logFile);
 
-    // fprintf(file, "incr: %d,%d\n", status.targets.incr,status.obstacles.incr);
-    // fflush(file);
     elapsedTime = 0;
 
     while (1) {
@@ -648,10 +690,11 @@ int main(int argc, char *argv[]) {
         wrefresh(map);
         
         sigset_t mask;
-        sigemptyset(&mask);
-        sigaddset(&mask, SIGUSR1);
-        sigaddset(&mask, SIGTERM);
-        sigaddset(&mask, SIGWINCH);
+        // sigemptyset(&mask);
+        // sigaddset(&mask, SIGUSR1);
+        // sigaddset(&mask, SIGTERM);
+        // sigaddset(&mask, SIGWINCH);
+        sigfillset(&mask);
 
         //FDs setting for select
         FD_ZERO(&readfds);

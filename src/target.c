@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <math.h>
 #include "target.h"
+#include "cjson/cJSON.h"
 
 // process that ask or receive
 #define askwr 1
@@ -23,13 +24,14 @@
 
 int pid;
 int fds[4]; 
-FILE *targFile = NULL;
 
+FILE *targFile = NULL;
+FILE *settingsfile = NULL;
 
 Message status;
 
-char drone_str[80];
-char str[len_str_targets];
+int numTarget = 5;
+int numObstacle = 5;
 
 int canSpawnPrev(int x_pos, int y_pos) {
     for (int i = 0; i < numTarget + status.targets.incr; i++) {
@@ -94,6 +96,28 @@ void sig_handler(int signo) {
     }
 }
 
+void readConfig() {
+
+    int len = fread(jsonBuffer, 1, sizeof(jsonBuffer), settingsfile); 
+    if (len <= 0) {
+        perror("Error reading the file");
+        return;
+    }
+    fclose(settingsfile);
+
+    cJSON *json = cJSON_Parse(jsonBuffer); // parse the text to json object
+
+    if (json == NULL) {
+        perror("Error parsing the file");
+    }
+
+    // Aggiorna le variabili globali
+    numTarget = cJSON_GetObjectItemCaseSensitive(json, "TargetNumber")->valueint;
+    numObstacle = cJSON_GetObjectItemCaseSensitive(json, "ObstacleNumber")->valueint;
+
+    cJSON_Delete(json); // pulisci
+}
+
 int main(int argc, char *argv[]) {
 
     fdsRead(argc, argv, fds);
@@ -106,6 +130,13 @@ int main(int argc, char *argv[]) {
     }
 
     pid = writePid("log/passParam.txt", 'a', 1, 't');
+
+    //Open config file
+    settingsfile = fopen("appsettings.json", "r");
+    if (settingsfile == NULL) {
+        perror("Error opening the file");
+        return EXIT_FAILURE;//1
+    }
 
     //Closing unused pipes heads to avoid deadlock
     close(fds[askrd]);
@@ -121,7 +152,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-
+    readConfig();
 
     readMsg(fds[recrd], &status,
             "[TARGET] Error reading drone position from [BB]", targFile);

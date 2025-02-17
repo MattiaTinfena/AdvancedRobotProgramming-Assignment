@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <math.h>
 #include "obstacle.h"
+#include "cjson/cJSON.h"
 
 // process that ask or receive
 #define askwr 1
@@ -24,10 +25,13 @@
 int pid;
 int fds[4];
 
+int numTarget = 5;
+int numObstacle = 5;
+
 Message status;
 
-
 FILE *obstFile = NULL;
+FILE *settingsfile = NULL;
 
 void sig_handler(int signo) {
     if (signo == SIGUSR1)
@@ -81,7 +85,30 @@ void createObstacles() {
     }
 }
 
+void readConfig() {
+
+    int len = fread(jsonBuffer, 1, sizeof(jsonBuffer), settingsfile); 
+    if (len <= 0) {
+        perror("Error reading the file");
+        return;
+    }
+    fclose(settingsfile);
+
+    cJSON *json = cJSON_Parse(jsonBuffer); // parse the text to json object
+
+    if (json == NULL) {
+        perror("Error parsing the file");
+    }
+
+    // Aggiorna le variabili globali
+    numTarget = cJSON_GetObjectItemCaseSensitive(json, "TargetNumber")->valueint;
+    numObstacle = cJSON_GetObjectItemCaseSensitive(json, "ObstacleNumber")->valueint;
+
+    cJSON_Delete(json); // pulisci
+}
+
 int main(int argc, char *argv[]) {
+    
     fdsRead(argc, argv, fds);
 
     // Opening log file
@@ -92,6 +119,13 @@ int main(int argc, char *argv[]) {
     }
 
     pid = writePid("log/passParam.txt", 'a', 1, 'o');
+
+    //Open config file
+    settingsfile = fopen("appsettings.json", "r");
+    if (settingsfile == NULL) {
+        perror("Error opening the file");
+        return EXIT_FAILURE;//1
+    }
 
     // Closing unused pipes heads to avoid deadlock
     close(fds[askrd]);
@@ -107,7 +141,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    
+    readConfig();
 
     for( int i = 0; i < MAX_OBSTACLES; i++){
         status.obstacles.x[i] = 0;

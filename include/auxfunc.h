@@ -37,15 +37,6 @@
 
 extern const char *moves[9];
 
-extern int levelTime;
-extern int numTarget;
-extern int numObstacle;
-extern int incTime;
-extern int incTarget;
-extern int incObstacle;
-
-
-
 typedef struct {
     int x;
     int y;

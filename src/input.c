@@ -53,18 +53,6 @@ Message status;
 
 Player leaderboard[10];
 
-void sig_handler(int signo) {
-    if (signo == SIGUSR1) {
-        handler(INPUT);
-    }else if(signo == SIGTERM){
-        LOGPROCESSDIED();
-        fclose(inputFile);
-        close(fds[recrd]);
-        close(fds[askwr]);
-        exit(EXIT_SUCCESS);
-    }
-}
-
 void btnSetUp (int row, int col){
 
     for(int i = 0; i < BUTTONS; i++){
@@ -506,15 +494,7 @@ void readConfig() {
     strcpy(inputStatus.name, cJSON_GetObjectItemCaseSensitive(json, "PlayerName")->valuestring);
     inputStatus.difficulty = cJSON_GetObjectItemCaseSensitive(json, "Difficulty")->valueint;
     inputStatus.level = cJSON_GetObjectItemCaseSensitive(json, "StartingLevel")->valueint;
-
-    // Aggiorna le variabili globali
-    levelTime = cJSON_GetObjectItemCaseSensitive(json, "LevelTime")->valueint;
-    incTime = cJSON_GetObjectItemCaseSensitive(json, "TimeIncrement")->valueint;
-    numTarget = cJSON_GetObjectItemCaseSensitive(json, "TargetNumber")->valueint;
-    numObstacle = cJSON_GetObjectItemCaseSensitive(json, "ObstacleNumber")->valueint;
-    incTarget = cJSON_GetObjectItemCaseSensitive(json, "TargetIncrement")->valueint;
-    incObstacle = cJSON_GetObjectItemCaseSensitive(json, "ObstacleIcrement")->valueint;
-
+    
     // Per array
     cJSON *numbersArray = cJSON_GetObjectItemCaseSensitive(json, "DefaultBTN"); // questo è un array
     LOGINPUTCONFIGURATION(numbersArray);
@@ -629,6 +609,19 @@ void saveGame(){
     LOGAMESAVED();
 }
 
+void sig_handler(int signo) {
+    if (signo == SIGUSR1) {
+        handler(INPUT);
+    }else if(signo == SIGTERM){
+        LOGPROCESSDIED();
+        fclose(inputFile);
+        close(fds[recrd]);
+        close(fds[askwr]);
+        exit(EXIT_SUCCESS);
+    } else if(signo == SIGWINCH){
+        resizeHandler();
+    }
+}
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -654,7 +647,7 @@ int main(int argc, char *argv[]) {
     readConfig();
 
     LOGLEADERBOARD(leaderboard);
-    LOGAMESETTINGS();
+    //LOGAMESETTINGS();
 
     // FDs reading
     char *fd_str = argv[1];
@@ -688,20 +681,20 @@ int main(int argc, char *argv[]) {
     
 
     struct sigaction sa;
-    //memset(&sa, 0, sizeof(sa));
+    memset(&sa, 0, sizeof(sa));
     sa.sa_handler = sig_handler;
     sa.sa_flags = SA_RESTART;  // Riavvia read/write interrotte
+
     if (sigaction(SIGUSR1, &sa, NULL) == -1) {
         perror("sigaction");
         exit(EXIT_FAILURE);
     }
+    if (sigaction(SIGTERM, &sa, NULL) == -1) {
+        perror("sigaction");
+        exit(EXIT_FAILURE);
+    }
 
-    struct sigaction res;
-    res.sa_handler = resizeHandler;
-    sigemptyset(&res.sa_mask);
-    res.sa_flags = SA_RESTART;
-
-    if (sigaction(SIGWINCH, &res, NULL) == -1) {
+    if (sigaction(SIGWINCH, &sa, NULL) == -1) {
         perror("Error while setting sigaction for SIGWINCH");
         exit(EXIT_FAILURE);
     }
