@@ -44,17 +44,17 @@ Additionally, the blackboard:
 
 The primitives of the blackboard are the following:
 - File Manipulation: Functions like fopen(), fwrite(), and fclose() are used to open a log file, write messages, and close it.
-- select(): Monitors multiple file descriptors for readiness.
 - Process Management and Signal Handling:
     - writePid(), which retrieves the process ID using getpid().
-    - Process Management & Signal Handling: sigaction() handles signals from the watchdog (WD), manages termination cleanup, and detects window resizing.
+    - sigaction() handles signals from the watchdog (WD), manages termination cleanup, and detects window resizing.
+    - kill() sends a signal to the watchdog
+    - sigset_t mask ensures safe signal handling with pselect() and sigfillset(&mask) blocks all signals during pselect().
 - Interprocess Communication (IPC) via Pipes:
     - write() and read() facilitate data exchange between processes.
 - UI Handling with Ncurses:
     - initscr(), start_color(), curs_set(0), noecho(), cbreak() configure input and display settings.
     - getmaxyx() retrieves terminal size for dynamic UI.
     - newwin(), box(), wrefresh(), mvwprintw(), and werase() manage windows and content rendering.
-
 
 ### Watchdog
 The watchdog continuously monitors system activity, detecting inactivity and triggering alerts when no computations occur. If necessary, it can halt the system to maintain proper functionality. It periodically sends a SIGUSR1 signal to all monitored processes to verify their responsiveness. If a process fails to respond, the watchdog logs the issue and terminates the unresponsive process.
@@ -117,7 +117,7 @@ The target and obstacle utilize the following primitives:
 - File Manipulation: Functions like fopen(), fwrite(), and fclose() are used to open a log file, write messages, and close it.
 - Process Management and Signal Handling:
     - writePid(), which retrieves the process ID using getpid().
-    - Sigaction(): used to initialize the signal handler to handle the signal sent by the WD
+    - Sigaction(): used to initialize the signal handler to handle the signal sent by the watchdog
 - Interprocess Communication (IPC) via Pipes:
     - write() and read() facilitate data exchange between processes.
 
@@ -149,7 +149,7 @@ The drone utilizes the following primitives:
 - File Manipulation: Functions like fopen(), fwrite(), and fclose() are used to open a log file, write messages, and close it.
 - Process Management and Signal Handling:
     - writePid(), which retrieves the process ID using getpid().
-    - Sigaction(): used to initialize the signal handler to handle the signal sent by the WD
+    - Sigaction() used to initialize the signal handler to handle the signal sent by the watchdog
 - Interprocess Communication (IPC) via Pipes:
     - write() and read() facilitate data exchange between processes.
 
@@ -157,11 +157,13 @@ In addition, readMsg() and writeMsg() facilitate IPC via pipes by reading and wr
 
 ## Parameter Management
 All configurable parameters are stored in the appsettings.json file and can be modified. These parameters include:
-- Player Settings: Player name, difficulty level, and default key bindings, which can be customized at the start of the game.
-- Game Progression: Initial level and time per level.
-- Environment Settings: Number of targets and obstacles, determining the density of entities in each level.
-- Level Scaling: Incremental increase in targets and obstacles as the game progresses.
+
+- Player Settings: the default player name, game difficulty (e.g. Easy, Difficult), and default key bindings, which can be customized at the start of the game.
+- Game Progression: the initial level when starting a new game, the time allocated per level (in seconds) and the additional time per level as the game progresses.
+- Environment Settings: Number of targets and obstacles, determining the density of entities in each level, and their incremental increase as the game progresses.
+- Physics Parameters for the drone dynamics.
 - Leaderboard: Player rankings, which are updated at the end of each game session.
+
 ## Logging
 Logs are available to assist developers in debugging the project and to provide users with insights into the execution process. Each component generates its own log file, storing relevant information, all of which are located in the logs folder. 
 The level of detail in the logs varies based on the project's build mode. In debug mode, more detailed information is recorded, while in release mode, logging is minimized. This behavior is controlled by the USE_DEBUG flag.
