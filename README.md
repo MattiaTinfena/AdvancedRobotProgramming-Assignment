@@ -27,7 +27,7 @@ If some changes are made to the code, it is necessary to run the make command to
 ## Project Architecture
 The project architecture of the assignment includes 6 active components, a parameter file ("appsettings.json"), and a log folder ("log") for all logger file. 
 
-![Project Architecture Overview](docs\ARP1-ass1.png)
+![Project Architecture Overview](docs\ARP1-ass1.png?raw=true)
 
 ### Blackboard
 The blackboard serves as the central communication center between components:
@@ -44,36 +44,41 @@ Additionally, the blackboard:
 
 The primitives of the blackboard are the following:
 - File Manipulation: Functions like fopen(), fwrite(), and fclose() are used to open a log file, write messages, and close it.
+- flock() used in the function writeSecure() manages file locking:
+    - LOCK_EX for exclusive write access.
+    - LOCK_SH for shared read access.
+    - LOCK_UN to unlock the file.
 - Process Management and Signal Handling:
     - writePid(), which retrieves the process ID using getpid().
-    - sigaction() handles signals from the watchdog (WD), manages termination cleanup, and detects window resizing.
-    - kill() sends a signal to the watchdog
+    - sigaction() handles signals from the watchdog (SIGUSR1), manages termination cleanup (SIGTERM), and detects window resizing (SIGWINCH).
+    - kill() allows you to safely shut down all processes.
     - sigset_t mask ensures safe signal handling with pselect() and sigfillset(&mask) blocks all signals during pselect().
 - Interprocess Communication (IPC) via Pipes:
-    - write() and read() facilitate data exchange between processes.
+    - write() and read() facilitate data exchange between processes in writeMsg(), writeInputMsg(), readMsg() and readInputMsg().
 - UI Handling with Ncurses:
     - initscr(), start_color(), curs_set(0), noecho(), cbreak() configure input and display settings.
     - getmaxyx() retrieves terminal size for dynamic UI.
     - newwin(), box(), wrefresh(), mvwprintw(), and werase() manage windows and content rendering.
+ 
+    readMsg() and writeMsg() facilitate IPC via pipes by reading and writing a Message structure, logging errors, and terminating on failure. readInputMsg() and writeInputMsg() do the same but with an inputMessage structure.
 
 ### Watchdog
 The watchdog continuously monitors system activity, detecting inactivity and triggering alerts when no computations occur. If necessary, it can halt the system to maintain proper functionality. It periodically sends a SIGUSR1 signal to all monitored processes to verify their responsiveness. If a process fails to respond, the watchdog logs the issue and terminates the unresponsive process.
 
-#### Passparam file
-The passparam file is used from the various process to write their process id so that the watchdog is able to read them and send them a signal to check if they are still running.
-
-
 The watchdog utilizes the following primitives:
 - File Manipulation: Functions like fopen(), fwrite(), and fclose() are used to open a log file, write messages, and close it.
 - Process Management and Signal Handling:
-    - Kill(): used to send a signal to the WD to tell that it's alive
+    - sigaction() manages the watchdog functionability using SIGUSR1,
+    - kill() allows to safely shut down all processes.
     - getpid(): used to get the process ID of the watchdog and write it on the passParam file.
     - Sigaction(): used to initialize the signal handler to handle the signal sent by the WD
 - Interprocess Communication (IPC) via Pipes:
-    - write() and read() facilitate data exchange between processes.
+    - write() and read() facilitate data exchange between processes in writeSecure() and readSecure().
 
-In addition to those, writeSecure() and readSecure() are custom functions designed for safe file operations. writeSecure() allows for writing or modifying a specific line in a file while ensuring that no two processes modify it simultaneously. Meanwhile, readSecure() reads a specific line while maintaining safe concurrent access.
+In particular, writeSecure() and readSecure() are custom functions designed for safe file operations. writeSecure() allows for writing or modifying a specific line in a file while ensuring that no two processes modify it simultaneously. Meanwhile, readSecure() reads a specific line while maintaining safe concurrent access.
 
+#### Passparam file
+The passparam file is used from the various process to write their process id so that the watchdog is able to read them and send them a signal to check if they are still running.
 
 ### Input
 The input handles user input and displays relevant information using the ncurses library, including:
@@ -98,8 +103,14 @@ In addition, they can choose to pause the game at any time by pressing the 'p' k
 The input utilizes the following primitives:
 
 - File Manipulation: fopen(), fwrite(), and fclose() to open, write, and close log files.
-- Process Management & Signal Handling: sigaction() handles signals from the watchdog (WD), manages termination cleanup, and detects window resizing.
-- Interprocess Communication (IPC) via Pipes: write() and read() facilitate data exchange between processes.
+- flock() used in the function writeSecure() manages file locking:
+    - LOCK_EX for exclusive write access.
+    - LOCK_SH for shared read access.
+    - LOCK_UN to unlock the file.
+- Process Management & Signal Handling:
+    - getpid(), which retrieves the process ID.
+    - sigaction() handles signals from the watchdog (SIGUSR1), manages termination cleanup (SIGTERM), and detects window resizing (SIGWINCH).
+- Interprocess Communication (IPC) via Pipes: write() and read() facilitate data exchange between processes in writeInputMsg() and readInputMsg().
 - UI Handling with Ncurses:
     - initscr(), start_color(), curs_set(0), noecho(), cbreak(), and nodelay() configure input and display settings.
     - getmaxyx() retrieves terminal size for dynamic UI.
@@ -107,7 +118,7 @@ The input utilizes the following primitives:
 - Configuration & JSON Parsing:
     - cJSON_Parse(), cJSON_GetObjectItemCaseSensitive(), cJSON_Print(), and cJSON_Delete() handle reading, modifying, and freeing configuration data.
 
-In addition, writeSecure() and readSecure() ensure safe file operations. writeSecure() modifies a specific line while preventing concurrent writes, and readSecure() reads a line with safe shared access. Lastly, readInputMsg() and writeInputMsg() facilitate IPC via pipes by reading and writing the InputMessage structure, logging errors, and terminating on failure.
+In addition, writeSecure() ensure safe file operations, allowing to modify a specific line while preventing concurrent writes.
 
 
 ### Target and Obstacle
@@ -119,10 +130,9 @@ The target and obstacle utilize the following primitives:
     - writePid(), which retrieves the process ID using getpid().
     - Sigaction(): used to initialize the signal handler to handle the signal sent by the watchdog
 - Interprocess Communication (IPC) via Pipes:
-    - write() and read() facilitate data exchange between processes.
+    - write() and read() facilitate data exchange between processes in writeMsg() and readMsg().
 
-In addition, readMsg() and writeMsg() facilitate IPC via pipes by reading and writing the Message structure, logging errors, and terminating on failure.
-
+In particular, writeSecure() ensure safe file operations, allowing to modify a specific line while preventing concurrent writes. Lastly, readMsg() and writeMsg() facilitate IPC via pipes by reading and writing a Message structure, logging errors, and terminating on failure.
 
 ### Drone
 The drone handles movement and interaction with targets and obstacles, using force-based navigation. The formula used to calculate the next position of the drone is the following:
