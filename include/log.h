@@ -7,16 +7,35 @@
 #include <time.h>
 #include "auxfunc.h"
 
-// Macro di configurazione
+//Macro's configuration
 #define MAX_LINE_LENGTH 100
 #define USE_DEBUG 1
 
-// Variabili globali
+//Global variables
 extern FILE *logFile;
 char difficultyStr[10];
 
+//Functions definition
+void sig_handler(int signo);
+void storePreviousPosition(Drone_bb *drone);
+void resizeHandler();
+void resetTargetValue(Message* status);
+void mapInit();
+void drawDrone(WINDOW * win);
+void drawObstacle(WINDOW * win);
+void drawTarget(WINDOW * win);
+void drawMenu(WINDOW* win);
+int randomSelect(int n);
+void detectCollision(Message* status, Drone_bb * prev);
+void createNewMap();
+void closeAll();
+void quit();
+void readConfig();
 
-// Macro per il logging della configurazione
+/*********************************************************************************************************************/
+/********************************************FUNCTIONS TO LOG*********************************************************/
+/*********************************************************************************************************************/
+
 #define LOGCONFIG(status) {                                                      \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
@@ -122,7 +141,6 @@ char difficultyStr[10];
     fflush(logFile);                                                             \
 }
 
-// Macro per loggare la fine del gioco
 #define LOGENDGAME(status, inputStatus) {                                        \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \
@@ -137,7 +155,6 @@ char difficultyStr[10];
     fflush(logFile);                                                             \
 }
 
-// Macro per loggare il completamento di un livello
 #define LOGENDLEVEL(status, inputStatus) {                                       \
     if (!logFile) {                                                              \
         perror("Log file not initialized.\n");                                   \

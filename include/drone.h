@@ -14,6 +14,30 @@
 // Variabili globali
 extern FILE *droneFile;
 
+typedef struct
+{
+    float x;
+    float y;
+    float previous_x[2];
+    float previous_y[2];
+
+} Drone;
+
+//Functions definition
+void updatePosition(Drone *p, Force force, int mass, Speed *speed, Speed *speedPrev);
+void drone_force(char* direction);
+void obstacle_force(Drone *drone, Obstacles* obstacles);
+void target_force(Drone *drone, Targets* targets);
+Force total_force(Force drone, Force obstacle, Force target);
+void sig_handler(int signo);
+void newDrone (Drone* drone, Targets* targets, Obstacles* obstacles, char* directions, char inst);
+void droneUpdate(Drone* drone, Speed* speed, Force* force, Message* msg);
+void mapInit(Drone* drone, Message* status);
+void readConfig();
+
+/*********************************************************************************************************************/
+/********************************************FUNCTIONS TO LOG*********************************************************/
+/*********************************************************************************************************************/
 
 #define LOGNEWMAP(status) {                                                      \
     if (!droneFile) {                                                              \

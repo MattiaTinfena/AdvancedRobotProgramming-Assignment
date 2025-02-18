@@ -21,7 +21,6 @@
 int main() {
 
     // Pipes creation 
-
     int pipes [PROCESSNUM][PIPEXPROCESS][2];
 
     for (int i = 0; i < PROCESSNUM; i++) {

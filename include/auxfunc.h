@@ -35,6 +35,11 @@
 #define PLAY 0
 #define PAUSE 1
 
+#define askwr 1
+#define askrd 0
+#define recwr 3
+#define recrd 2
+
 extern const char *moves[9];
 
 typedef struct {

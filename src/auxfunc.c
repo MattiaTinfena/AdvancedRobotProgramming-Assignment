@@ -15,10 +15,6 @@ char jsonBuffer[MAX_FILE_SIZE];
 
 void handleLogFailure() {
     printf("Logging failed. Cleaning up resources...\n");
-
-    // Perform necessary cleanup here (close files, free memory, etc.)
-    //ASK MATTIA
-   
     exit(EXIT_FAILURE);
 }
 
@@ -28,7 +24,7 @@ int writeSecure(char* filename, char* data, unsigned long numeroRiga, char mode)
         return -1;
     }
 
-    FILE* file = fopen(filename, "r+");  // Apertura per lettura e scrittura
+    FILE* file = fopen(filename, "r+");
     if (file == NULL) {
         perror("Errore nell'apertura del file");
         return -1;
@@ -41,10 +37,9 @@ int writeSecure(char* filename, char* data, unsigned long numeroRiga, char mode)
         return -1;
     }
 
-    // Blocca il file per accesso esclusivo
     while (flock(fd, LOCK_EX) == -1) {
         if (errno == EWOULDBLOCK) {
-            usleep(100000);  // Pausa di 100 ms
+            usleep(100000);
         } else {
             perror("Errore nel blocco del file");
             fclose(file);
@@ -52,10 +47,9 @@ int writeSecure(char* filename, char* data, unsigned long numeroRiga, char mode)
         }
     }
 
-    // Legge tutto il file in memoria
-    char** righe = NULL;  // Array di righe
-    unsigned long numRighe = 0;  // Numero di righe
-    char buffer[1024];    // Buffer per leggere ogni riga
+    char** righe = NULL;
+    unsigned long numRighe = 0;
+    char buffer[1024];
 
     while (fgets(buffer, sizeof(buffer), file)) {
         righe = realloc(righe, (numRighe + 1) * sizeof(char*));
@@ -64,33 +58,27 @@ int writeSecure(char* filename, char* data, unsigned long numeroRiga, char mode)
             fclose(file);
             return -1;
         }
-        righe[numRighe] = strdup(buffer);  // Duplica la riga letta
+        righe[numRighe] = strdup(buffer);
         numRighe++;
     }
 
-    // Modifica o aggiunge righe
     if (numeroRiga > numRighe){
 
-        // Aggiungi righe vuote fino alla riga richiesta
         righe = realloc(righe, numeroRiga * sizeof(char*));
         for (unsigned long i = numRighe; i < numeroRiga - 1; i++) {
-            righe[i] = strdup("\n");  // Righe vuote
+            righe[i] = strdup("\n");
         }
-        righe[numeroRiga - 1] = strdup(data);  // Nuova riga
+        righe[numeroRiga - 1] = strdup(data);
         numRighe = numeroRiga;
     } else {
-        // Se la riga esiste, modifica in base alla modalità
         if (mode == 'o') {
-            // Sovrascrivi il contenuto della riga
             free(righe[numeroRiga - 1]);
             righe[numeroRiga - 1] = strdup(data);
         } else if (mode == 'a') {
-            // Rimuovi il newline alla fine della riga esistente
             unsigned long len = strlen(righe[numeroRiga - 1]);
             if (len > 0 && righe[numeroRiga - 1][len - 1] == '\n') {
                 righe[numeroRiga - 1][len - 1] = '\0';
             }
-            // Concatena il nuovo testo
             char* nuovoContenuto = malloc(len + strlen(data) + 2);
             if (!nuovoContenuto) {
                 perror("Errore nella malloc");
@@ -103,18 +91,16 @@ int writeSecure(char* filename, char* data, unsigned long numeroRiga, char mode)
         }
     }
 
-    // Riscrive il contenuto nel file
     rewind(file);
     for (unsigned long i = 0; i < numRighe; i++) {
         fprintf(file, "%s", righe[i]);
         if (righe[i][strlen(righe[i]) - 1] != '\n') {
-            fprintf(file, "\n");  // Aggiungi newline se mancante
+            fprintf(file, "\n");
         }
-        free(righe[i]);  // Libera la memoria per ogni riga
+        free(righe[i]);
     }
-    free(righe);  // Libera l'array di righe
+    free(righe); 
 
-    // Trunca il file a lunghezza corrente
     if (ftruncate(fd, ftell(file)) == -1) {
         perror("Errore nel troncamento del file");
         fclose(file);
@@ -123,7 +109,6 @@ int writeSecure(char* filename, char* data, unsigned long numeroRiga, char mode)
 
     fflush(file);
 
-    // Sblocca il file
     if (flock(fd, LOCK_UN) == -1) {
         perror("Errore nello sblocco del file");
         fclose(file);
@@ -148,10 +133,9 @@ int readSecure(char* filename, char* data, unsigned long numeroRiga) {
         return -1;
     }
 
-    // Blocca il file per lettura condivisa
     while (flock(fd, LOCK_SH) == -1) {
         if (errno == EWOULDBLOCK) {
-            usleep(100000);  // Pausa di 100 ms
+            usleep(100000);
         } else {
             perror("Errore nel blocco del file");
             fclose(file);
@@ -159,20 +143,17 @@ int readSecure(char* filename, char* data, unsigned long numeroRiga) {
         }
     }
 
-    // Leggi fino alla riga richiesta
     unsigned long rigaCorrente = 1;
-    char buffer[1024];  // Buffer temporaneo per leggere le righe
+    char buffer[1024];
     while (fgets(buffer, sizeof(buffer), file)) {
         if (rigaCorrente == numeroRiga) {
-            // Copia la riga nel buffer di output
             strncpy(data, buffer, 1024);
-            data[1023] = '\0';  // Assicurati che sia terminata correttamente
+            data[1023] = '\0';
             break;
         }
         rigaCorrente++;
     }
 
-    // Controlla se abbiamo raggiunto la riga desiderata
     if (rigaCorrente < numeroRiga) {
         fprintf(stderr, "Errore: Riga %ld non trovata nel file.\n", numeroRiga);
         flock(fd, LOCK_UN);
@@ -180,7 +161,6 @@ int readSecure(char* filename, char* data, unsigned long numeroRiga) {
         return -1;
     }
 
-    // Sblocca il file
     if (flock(fd, LOCK_UN) == -1) {
         perror("Errore nello sblocco del file");
         fclose(file);
@@ -232,14 +212,12 @@ void fdsRead (int argc, char* argv[], int* fds){
         exit(1);
     }
 
-     // FDs reading
     char *fd_str = argv[1];
     int index = 0;
 
     char *token = strtok(fd_str, ",");
     token = strtok(NULL, ",");
 
-    // FDs extraction
     while (token != NULL && index < 4) {
         fds[index] = atoi(token);
         index++;
@@ -362,7 +340,6 @@ void handler(int id) {
     writeSecure("log/passParam.txt", log_entry, id + 3, 'o');
 }
 
-// Funzione helper per ottenere il timestamp formattato
 void getFormattedTime(char *buffer, unsigned long size) {
     time_t currentTime = time(NULL);
     snprintf(buffer, size, "%.*s", (int)(strlen(ctime(&currentTime)) - 1), ctime(&currentTime));

@@ -7,12 +7,16 @@
 #include <time.h>
 #include "auxfunc.h"
 
-// Macro di configurazione
+//Macro's configuration
 #define MAX_LINE_LENGTH 100
 #define USE_DEBUG 1
 
-// Variabili globali
+//Global variables
 extern FILE *wdFile;
+
+/*********************************************************************************************************************/
+/********************************************FUNCTIONS TO LOG*********************************************************/
+/*********************************************************************************************************************/
 
 #define LOGWDDIED() { \
     if (!wdFile) {                                                              \

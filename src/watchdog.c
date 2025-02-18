@@ -45,7 +45,7 @@ void closeAll(int id){
 }
 
 int main() {
-    // Open the output wdFile for writing
+
     wdFile = fopen("log/watchdog.log", "w");
     if (wdFile == NULL) {
         perror("Error opening the wdFile");
@@ -92,30 +92,16 @@ int main() {
         token = strtok(NULL, ",");
     }
 
-    // // Write the PID values to the output wdFile
-    // for (int i = 0; i < PROCESSTOCONTROL; i++) {
-    //     fprintf(wdFile, "pid[%d] = %d\n", i, pids[i]);
-    //     fflush(wdFile);
-    // }
-
-       
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = sig_handler;
-    sa.sa_flags = SA_RESTART;  // Riavvia read/write interrotte
+    sa.sa_flags = SA_RESTART;
+
     if (sigaction(SIGUSR1, &sa, NULL) == -1) {
         perror("sigaction");
         exit(EXIT_FAILURE);
     }
 
-    // while(1) {
-    //     sleep(2);
-    //     if (kill(pids[TARGET], SIGUSR1) == -1) {
-    //         perror("[WATCHDOG] target not responding");
-    //         exit(1);
-    //     }
-    // }
-    
     for (int i = 0; i < PROCESSTOCONTROL; i++) {
             if (kill(pids[i], SIGUSR1) == -1) {
                 LOG_PROCESS_NOT_RESPONDING(pids[i]);
@@ -138,7 +124,7 @@ int main() {
                         LOG_PROCESS_NOT_RESPONDING(pids[i]);
                         closeAll(i);
                     }
-                // usleep(10000);
+                usleep(10000);
             }
         }   
 
@@ -168,9 +154,7 @@ int main() {
             }
         } 
     }                 
-    
-    //Close the wdFile
-    fclose(wdFile);
 
+    fclose(wdFile);
     return 0;
 }

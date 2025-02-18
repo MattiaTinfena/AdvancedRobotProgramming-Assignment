@@ -11,12 +11,6 @@
 #define MAX_LINE_LENGTH 100
 #define USE_DEBUG 1
 
-// process that ask or receive
-#define askwr 1
-#define askrd 0
-#define recwr 3
-#define recrd 2
-
 #define HEIGHT  50
 #define WIDTH   80
 
@@ -47,6 +41,29 @@
 
 // Variabili globali
 extern FILE *inputFile;
+
+//Functions definition
+void btnSetUp (int row, int col);
+void drawBtn(int b);
+void drawName();
+void setName();
+void drawDifficulty();
+void setDifficulty();
+int keyAlreadyUsed(int key, int index );
+void setBtns();
+void pauseMenu();
+void mainMenu();
+void drawInfo();
+void resizeHandler();
+void readConfig();
+void updateLeaderboard();
+void updatePlayersInConfig();
+void saveGame();
+void sig_handler(int signo);
+
+/*********************************************************************************************************************/
+/********************************************FUNCTIONS TO LOG*********************************************************/
+/*********************************************************************************************************************/
 
 #define LOGPROCESSDIED() { \
     if (!inputFile) {                                                              \

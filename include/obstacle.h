@@ -7,12 +7,23 @@
 #include <time.h>
 #include "auxfunc.h"
 
-// Macro di configurazione
+//Macro's configuration
 #define MAX_LINE_LENGTH 100
 #define USE_DEBUG 1
 
-// Variabili globali
+//Global variables
 extern FILE *obstFile;
+
+//Functions definition
+int canSpawn(int x_pos, int y_pos);
+int canSpawnPrev(int x_pos, int y_pos);
+void createObstacles();
+void sig_handler(int signo);
+void readConfig();
+
+/*********************************************************************************************************************/
+/********************************************FUNCTIONS TO LOG*********************************************************/
+/*********************************************************************************************************************/
 
 #ifdef USE_DEBUG
 #define LOGNEWMAP(status) {                                                      \

@@ -1,33 +1,17 @@
-#include <ncurses.h>
+
 #include <stdio.h>
 #include <string.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include "auxfunc.h"
-#include <math.h>
 #include <signal.h>
-#include "drone.h"
+#include <math.h>
 #include "cjson/cJSON.h"
+#include "auxfunc.h"
+#include "drone.h"
 
-// process that ask or receive
-#define askwr 1
-#define askrd 0
-#define recwr 3
-#define recrd 2
 
-#define PERIOD 10 //50 //[Hz]
-
+#define PERIOD 10
 #define MAX_DIRECTIONS 80
-
-int numTarget = 5;
-int numObstacle = 5;
-
-float K = 1.0;
-float droneMass = 1.0;
 
 Force force_d = {0, 0};
 Force force_o = {0, 0};
@@ -42,20 +26,242 @@ Targets targets;
 Obstacles obstacles;
 Message status;
 
+FILE *droneFile = NULL;
+FILE *settingsfile = NULL;
 
 int pid;
 int fds[4];
 
-FILE *droneFile = NULL;
-FILE *settingsfile = NULL;
-typedef struct
-{
-    float x;
-    float y;
-    float previous_x[2]; // 0 is one before and 1 is is two before
-    float previous_y[2];
+int numTarget = 5;
+int numObstacle = 5;
 
-} Drone;
+float K = 1.0;
+float droneMass = 1.0;
+
+int main(int argc, char *argv[]) {
+    
+    fdsRead(argc, argv, fds);
+
+    // Opening log file
+    droneFile = fopen("log/drone.log", "a");
+    if (droneFile == NULL) {
+        perror("[DRONE] Error during the file opening");
+        exit(EXIT_FAILURE);
+    }
+
+    //Open config file
+    settingsfile = fopen("appsettings.json", "r");
+    if (settingsfile == NULL) {
+        perror("Error opening the file");
+        return EXIT_FAILURE;
+    }
+
+    pid = writePid("log/passParam.txt", 'a', 1, 'd');
+
+    // Closing unused pipes heads to avoid deadlock
+    close(fds[askrd]);
+    close(fds[recwr]);
+
+    //Initializing all the variables
+    Drone drone = {0};
+
+    drone.x = 10;
+    drone.y = 20;
+    drone.previous_x[0] = 10.0;
+    drone.previous_x[1] = 10.0;
+    drone.previous_y[0] = 20.0;
+    drone.previous_y[1] = 20.0;
+
+    for (int i = 0; i < MAX_TARGET; i++) {
+        targets.x[i] = 0;
+        targets.y[i] = 0;
+        status.targets.x[i] = 0;
+        status.targets.y[i] = 0;
+    }
+    targets.incr = 0;
+
+    for (int i = 0; i < MAX_OBSTACLES; i++) {
+        obstacles.x[i] = 0;
+        obstacles.y[i] = 0;
+        status.obstacles.x[i] = 0;
+        status.obstacles.y[i] = 0;
+    }
+    obstacles.incr = 0;
+
+    //Reading configuration from json file
+    readConfig();
+
+    //Defining signals
+    struct sigaction sa;
+    sa.sa_handler = sig_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+
+    if (sigaction(SIGUSR1, &sa, NULL) == -1) {
+        perror("Error while setting sigaction for SIGWINCH");
+        exit(EXIT_FAILURE);
+    }
+
+    if (sigaction(SIGTERM, &sa, NULL) == -1) {
+        perror("Error while setting sigaction for SIGWINCH");
+        exit(EXIT_FAILURE);
+    }
+
+    char directions[MAX_DIRECTIONS] = {0};
+
+    mapInit(&drone, &status);
+    LOGNEWMAP(status);
+
+    while (1)
+    {
+        status.msg = 'R';
+
+        writeMsg(fds[askwr], &status, 
+            "[DRONE] Ready not sended correctly", droneFile);
+
+        status.msg = '\0';
+
+        readMsg(fds[recrd], &status,
+            "[DRONE] Error receiving map from BB", droneFile);
+
+        switch (status.msg) {
+        
+            case 'M':
+                LOGNEWMAP(status);
+
+                newDrone(&drone, &status.targets, &status.obstacles, directions, status.msg);
+                droneUpdate(&drone, &speed, &force, &status);
+
+                writeMsg(fds[askwr], &status, 
+                        "[DRONE-M] Error sending drone position", droneFile);
+                break;
+            case 'I':
+
+                strcpy(directions, status.input);
+
+                newDrone(&drone, &status.targets, &status.obstacles, directions, status.msg);
+                droneUpdate(&drone, &speed, &force, &status);
+                LOGDRONEINFO(status.drone);
+
+                writeMsg(fds[askwr], &status, 
+                        "[DRONE-I] Error sending drone position", droneFile);
+
+                break;
+            case 'A':
+                
+                newDrone(&drone, &status.targets, &status.obstacles, directions, status.msg);
+                droneUpdate(&drone, &speed, &force, &status);
+
+                writeMsg(fds[askwr], &status, 
+                        "[DRONE-A] Error sending drone position", droneFile);
+                usleep(10000);
+                break;
+            default:
+                perror("[DRONE-DEFAULT] Error data received");
+                exit(EXIT_FAILURE);
+        }
+
+        usleep(1000000 / PERIOD);
+    }
+}
+
+
+/*********************************************************************************************************************/
+/***************************************FUNCTIONS TO COMPUTE FORCES***************************************************/
+/*********************************************************************************************************************/
+
+void drone_force(char* direction) {
+    
+    if (strcmp(direction, "") != 0) {
+
+        if (strcmp(direction, "right") == 0 || strcmp(direction, "upright") == 0 || strcmp(direction, "downright") == 0) {
+            force_d.x += STEP;
+        } else if (strcmp(direction, "left") == 0 || strcmp(direction, "upleft") == 0 || strcmp(direction, "downleft") == 0) {
+            force_d.x -= STEP;
+        } else if (strcmp(direction, "up") == 0 || strcmp(direction, "down") == 0) {
+            force_d.x += 0;
+        } else if (strcmp(direction, "center") == 0 ) {
+            force_d.x = 0;
+        }
+
+        if (strcmp(direction, "up") == 0 || strcmp(direction, "upleft") == 0 || strcmp(direction, "upright") == 0) {
+            force_d.y -= STEP;
+        } else if (strcmp(direction, "down") == 0 || strcmp(direction, "downleft") == 0 || strcmp(direction, "downright") == 0) {
+            force_d.y += STEP;
+        } else if (strcmp(direction, "left") == 0 || strcmp(direction, "right") == 0 ) {
+            force_d.y += 0;
+        } else if (strcmp(direction, "center") == 0 ) {
+            force_d.y = 0;
+        }
+    } else {
+        force_d.x += 0;
+        force_d.y += 0;
+    }
+
+}
+
+void obstacle_force(Drone *drone, Obstacles* obstacles) {
+    
+    float deltaX, deltaY, distance;
+    force_o.x = 0;
+    force_o.y = 0;
+
+    for (int i = 0; i < numObstacle + status.obstacles.incr; i++) {
+        deltaX =  obstacles->x[i] - drone->x;
+        deltaY =  obstacles->y[i] - drone->y;
+
+        distance = sqrt(pow(deltaX, 2) + pow(deltaY, 2));
+
+        if (distance > FORCE_THRESHOLD) {
+            continue;
+        }
+        float repulsion =ETA * pow(((1/distance) - (1/FORCE_THRESHOLD)), 2)/distance;
+        if (repulsion > MAX_FORCE) repulsion = MAX_FORCE;
+        force_o.x -= repulsion * (deltaX / distance);
+        force_o.y -= repulsion * (deltaY / distance);
+    }
+
+}
+
+void target_force(Drone *drone, Targets* targets) {
+    
+    float deltaX, deltaY, distance;
+    force_t.x = 0;
+    force_t.y = 0;
+
+    for (int i = 0; i < numTarget + status.targets.incr; i++) {
+        if(targets->value[i] > 0){    
+            deltaX = targets->x[i] - drone->x;
+            deltaY = targets->y[i] - drone->y;
+            distance = sqrt(pow(deltaX, 2) + pow(deltaY, 2));
+
+
+            if (distance > FORCE_THRESHOLD) continue;
+
+            float attraction = ETA * pow(((1/distance) - (1/FORCE_THRESHOLD)), 2)/distance;
+            if (attraction > MAX_FORCE) attraction = MAX_FORCE;
+            force_t.x += attraction * (deltaX / distance);
+            force_t.y += attraction * (deltaY / distance);
+        }
+    }
+
+
+}
+
+Force total_force(Force drone, Force obstacle, Force target){
+    
+    Force total;
+    total.x = drone.x + obstacle.x + target.x;
+    total.y = drone.y + obstacle.y + target.y;
+
+    LOGFORCES(drone, target, obstacle);
+
+    return total;
+}
+
+/*********************************************************************************************************************/
+/****************************************FUNCTIONS TO MOVE DRONE******************************************************/
+/*********************************************************************************************************************/
 
 
 void updatePosition(Drone *p, Force force, int mass, Speed *speed, Speed *speedPrev) {
@@ -92,109 +298,8 @@ void updatePosition(Drone *p, Force force, int mass, Speed *speed, Speed *speedP
 
 }
 
-void drone_force(char* direction) {
-    
-    if (strcmp(direction, "") != 0) {
-        // Imposta direzione x
-        if (strcmp(direction, "right") == 0 || strcmp(direction, "upright") == 0 || strcmp(direction, "downright") == 0) {
-            force_d.x += STEP;
-        } else if (strcmp(direction, "left") == 0 || strcmp(direction, "upleft") == 0 || strcmp(direction, "downleft") == 0) {
-            force_d.x -= STEP;
-        } else if (strcmp(direction, "up") == 0 || strcmp(direction, "down") == 0) {
-            force_d.x += 0; // Nessuna forza lungo x
-        } else if (strcmp(direction, "center") == 0 ) {
-            force_d.x = 0;
-        }
-
-        if (strcmp(direction, "up") == 0 || strcmp(direction, "upleft") == 0 || strcmp(direction, "upright") == 0) {
-            force_d.y -= STEP;
-        } else if (strcmp(direction, "down") == 0 || strcmp(direction, "downleft") == 0 || strcmp(direction, "downright") == 0) {
-            force_d.y += STEP;
-        } else if (strcmp(direction, "left") == 0 || strcmp(direction, "right") == 0 ) {
-            force_d.y += 0; // Nessuna forza lungo y
-        } else if (strcmp(direction, "center") == 0 ) {
-            force_d.y = 0;
-        }
-    } else {
-        force_d.x += 0;
-        force_d.y += 0;
-    }
-
-}
-
-void obstacle_force(Drone *drone, Obstacles* obstacles) {
-    float deltaX, deltaY, distance;
-    force_o.x = 0;
-    force_o.y = 0;
-
-
-    for (int i = 0; i < numObstacle + status.obstacles.incr; i++) {
-        deltaX =  obstacles->x[i] - drone->x;
-        deltaY =  obstacles->y[i] - drone->y;
-
-        distance = sqrt(pow(deltaX, 2) + pow(deltaY, 2));
-
-        if (distance > FORCE_THRESHOLD) {
-            continue; // Beyond influence radius
-        }
-        float repulsion =ETA * pow(((1/distance) - (1/FORCE_THRESHOLD)), 2)/distance;
-        if (repulsion > MAX_FORCE) repulsion = MAX_FORCE;
-        force_o.x -= repulsion * (deltaX / distance);
-        force_o.y -= repulsion * (deltaY / distance);
-
-
-    }
-
-}
-
-void target_force(Drone *drone, Targets* targets) {
-    
-    float deltaX, deltaY, distance;
-    force_t.x = 0;
-    force_t.y = 0;
-
-    for (int i = 0; i < numTarget + status.targets.incr; i++) {
-        if(targets->value[i] > 0){    
-            deltaX = targets->x[i] - drone->x;
-            deltaY = targets->y[i] - drone->y;
-            distance = sqrt(pow(deltaX, 2) + pow(deltaY, 2));
-
-
-            if (distance > FORCE_THRESHOLD) continue;
-
-            float attraction = ETA * pow(((1/distance) - (1/FORCE_THRESHOLD)), 2)/distance;
-            if (attraction > MAX_FORCE) attraction = MAX_FORCE;
-            force_t.x += attraction * (deltaX / distance);
-            force_t.y += attraction * (deltaY / distance);
-        }
-    }
-
-
-}
-
-Force total_force(Force drone, Force obstacle, Force target){
-    Force total;
-    total.x = drone.x + obstacle.x + target.x;
-    total.y = drone.y + obstacle.y + target.y;
-
-    LOGFORCES(drone, target, obstacle);
-
-    return total;
-}
-
-void sig_handler(int signo) {
-    if (signo == SIGUSR1) {
-        handler(DRONE);
-    }else if(signo == SIGTERM){
-        LOGPROCESSDIED();   
-        fclose(droneFile);
-        close(fds[recrd]);
-        close(fds[askwr]);
-        exit(EXIT_SUCCESS);
-    }
-}
-
 void newDrone (Drone* drone, Targets* targets, Obstacles* obstacles, char* directions, char inst){
+    
     target_force(drone, targets);
     obstacle_force(drone, obstacles);
     if(inst == 'I'){
@@ -217,13 +322,7 @@ void droneUpdate(Drone* drone, Speed* speed, Force* force, Message* msg) {
 
 void mapInit(Drone* drone, Message* status){
 
-    
     msgInit(status);
-
-
-    fprintf(droneFile, "First map initialization. Updating drone position... \n");
-    fflush(droneFile);
-
 
     droneUpdate(drone, &speed, &force, status);
     LOGDRONEINFO(status->drone);
@@ -231,12 +330,29 @@ void mapInit(Drone* drone, Message* status){
     writeMsg(fds[askwr], status, 
             "[DRONE] Error sending drone info", droneFile);
     
-    fprintf(droneFile, "Sent drone position\n");
-    fflush(droneFile);
-    
     readMsg(fds[recrd], status,
             "[DRONE] Error receiving map from BB", droneFile);
 }
+
+/*********************************************************************************************************************/
+/***********************************************SIGNAL HANDLER********************************************************/
+/*********************************************************************************************************************/
+
+void sig_handler(int signo) {
+    if (signo == SIGUSR1) {
+        handler(DRONE);
+    }else if(signo == SIGTERM){
+        LOGPROCESSDIED();   
+        fclose(droneFile);
+        close(fds[recrd]);
+        close(fds[askwr]);
+        exit(EXIT_SUCCESS);
+    }
+}
+
+/*********************************************************************************************************************/
+/********************************************READING CONFIGURATION****************************************************/
+/*********************************************************************************************************************/
 
 void readConfig() {
 
@@ -247,143 +363,14 @@ void readConfig() {
     }
     fclose(settingsfile);
 
-    cJSON *json = cJSON_Parse(jsonBuffer); // parse the text to json object
+    cJSON *json = cJSON_Parse(jsonBuffer);
 
     if (json == NULL) {
         perror("Error parsing the file");
     }
 
-    // Aggiorna le variabili globali
     K = cJSON_GetObjectItemCaseSensitive(json, "kDrone")->valuedouble;
     droneMass = cJSON_GetObjectItemCaseSensitive(json, "massDrone")->valuedouble;
     
-    cJSON_Delete(json); // pulisci
-}
-
-int main(int argc, char *argv[]) {
-    
-    fdsRead(argc, argv, fds);
-
-    // Opening log file
-    droneFile = fopen("log/drone.log", "a");
-    if (droneFile == NULL) {
-        perror("[DRONE] Error during the file opening");
-        exit(EXIT_FAILURE);
-    }
-
-    //Open config file
-    settingsfile = fopen("appsettings.json", "r");
-    if (settingsfile == NULL) {
-        perror("Error opening the file");
-        return EXIT_FAILURE;//1
-    }
-
-    pid = writePid("log/passParam.txt", 'a', 1, 'd');
-
-    // Closing unused pipes heads to avoid deadlock
-    close(fds[askrd]);
-    close(fds[recwr]);
-
-    readConfig();
-
-    //Defining signals
-    struct sigaction sa;
-    sa.sa_handler = sig_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    sigaction(SIGUSR1, &sa, NULL);
-    sigaction(SIGTERM, &sa, NULL);
-
-    
-    char directions[MAX_DIRECTIONS] = {0};
-
-    Drone drone = {0};
-
-    drone.x = 10;
-    drone.y = 20;
-    drone.previous_x[0] = 10.0;
-    drone.previous_x[1] = 10.0;
-    drone.previous_y[0] = 20.0;
-    drone.previous_y[1] = 20.0;
-
-    for (int i = 0; i < MAX_TARGET; i++) {
-        targets.x[i] = 0;
-        targets.y[i] = 0;
-        status.targets.x[i] = 0;
-        status.targets.y[i] = 0;
-    }
-    targets.incr = 0;
-
-    for (int i = 0; i < MAX_OBSTACLES; i++) {
-        obstacles.x[i] = 0;
-        obstacles.y[i] = 0;
-        status.obstacles.x[i] = 0;
-        status.obstacles.y[i] = 0;
-    }
-    obstacles.incr = 0;
-
-    // char data[200];
-
-   mapInit(&drone, &status);
-   LOGNEWMAP(status);
-
-    while (1)
-    {
-        status.msg = 'R';
-
-        // fprintf(droneFile, "Sending ready msg");
-        // fflush(droneFile);
-
-        writeMsg(fds[askwr], &status, 
-            "[DRONE] Ready not sended correctly", droneFile);
-
-        status.msg = '\0';
-
-        readMsg(fds[recrd], &status,
-            "[DRONE] Error receiving map from BB", droneFile);
-
-        switch (status.msg) {
-        
-            case 'M':
-                LOGNEWMAP(status);
-
-                newDrone(&drone, &status.targets, &status.obstacles, directions, status.msg);
-                droneUpdate(&drone, &speed, &force, &status);
-
-                // drone sends its position to BB
-                writeMsg(fds[askwr], &status, 
-                        "[DRONE-M] Error sending drone position", droneFile);
-                break;
-            case 'I':
-
-                strcpy(directions, status.input);
-
-                newDrone(&drone, &status.targets, &status.obstacles, directions, status.msg);
-                droneUpdate(&drone, &speed, &force, &status);
-                LOGDRONEINFO(status.drone);
-
-                // drone sends its position to BB
-                writeMsg(fds[askwr], &status, 
-                        "[DRONE-I] Error sending drone position", droneFile);
-
-                break;
-            case 'A':
-                
-                newDrone(&drone, &status.targets, &status.obstacles, directions, status.msg);
-                droneUpdate(&drone, &speed, &force, &status);
-
-                //LOGPOSITION(drone);
-                
-                // drone sends its position to BB
-                writeMsg(fds[askwr], &status, 
-                        "[DRONE-A] Error sending drone position", droneFile);
-                usleep(10000);
-                break;
-            default:
-                perror("[DRONE-DEFAULT] Error data received");
-                exit(EXIT_FAILURE);
-        }
-
-        usleep(1000000 / PERIOD);
-    }
+    cJSON_Delete(json);
 }
