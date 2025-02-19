@@ -16,18 +16,6 @@
 #define MAX_TARGET 20
 #define MAX_OBSTACLES 20
 #define NO_SPAWN_DIST 5
-#define ETA 5
-#define STEP 0.1
-
-#define FORCE_THRESHOLD 5 //[m]
-#define MIN_THRESHOLD 2 //[m]
-
-#define MAX_FORCE 0.5 //
-
-#define TARGET_DETECTION 1
-
-#define len_str_targets 6 * MAX_TARGET + 2
-#define len_str_obstacles 6 * MAX_OBSTACLES + 2
 
 #define MAX_LINE_LENGTH 100
 #define MAX_FILE_SIZE 1024

@@ -510,7 +510,7 @@ void drawObstacle(WINDOW * win){
     wattron(win, A_BOLD);
     wattron(win, COLOR_PAIR(2)); 
     for(int i = 0; i < numObstacle + status.obstacles.incr; i++){
-        mvwprintw(win, (int)(status.obstacles.y[i]*scaleh), (int)(status.obstacles.x[i]*scalew), "0");
+        mvwprintw(win, (int)(status.obstacles.y[i] *scaleh), (int)(status.obstacles.x[i]*scalew), "0");
     }
     wattroff(win, COLOR_PAIR(2)); 
     wattroff(win, A_BOLD); 
@@ -609,6 +609,8 @@ void sig_handler(int signo) {
         close(fds[TARGET][recwr]);
         close(fds[TARGET][askrd]);
         exit(EXIT_SUCCESS);
+    } else if(signo == SIGWINCH){
+        resizeHandler();
     }
 }
 

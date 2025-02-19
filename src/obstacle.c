@@ -112,16 +112,16 @@ void createObstacles() {
     for (int i = 0; i < numObstacle + status.obstacles.incr; i++){
     
         do {
-            x_pos = rand() % (WINDOW_LENGTH - 1);
-            y_pos = rand() % (WINDOW_WIDTH - 1);
+            x_pos = rand() % (WINDOW_LENGTH - 10);
+            y_pos = rand() % (WINDOW_WIDTH - 10);
         } while (
             ((abs(x_pos - status.drone.x) <= NO_SPAWN_DIST) &&
             (abs(y_pos - status.drone.y) <= NO_SPAWN_DIST)) || 
             canSpawn(x_pos, y_pos) == 0 ||
             canSpawnPrev(x_pos, y_pos) == 0);
 
-        status.obstacles.x[i] = x_pos;
-        status.obstacles.y[i] = y_pos;
+        status.obstacles.x[i] = x_pos + 5; // To bring the obstacle in the range 5-95
+        status.obstacles.y[i] = y_pos + 5; // To bring the obstacle in the range 5-95
     }
 }
 

@@ -26,12 +26,13 @@ typedef struct
 //Functions definition
 void updatePosition(Drone *p, Force force, int mass, Speed *speed, Speed *speedPrev);
 void drone_force(char* direction);
-void obstacle_force(Drone *drone, Obstacles* obstacles);
+void obstacle_force(Drone* drone);
 void target_force(Drone *drone, Targets* targets);
 void boundary_force(Drone *drone);
 Force total_force(Force drone, Force obstacle, Force target, Force boundary);
+Force compute_repulsive_force(Drone *drone, float x, float y);
 void sig_handler(int signo);
-void newDrone (Drone* drone, Targets* targets, Obstacles* obstacles, char* directions, char inst);
+void newDrone (Drone* drone, Targets* targets, char* directions, char inst);
 void droneUpdate(Drone* drone, Speed* speed, Force* force, Message* msg);
 void mapInit(Drone* drone, Message* status);
 void readConfig();

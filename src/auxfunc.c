@@ -85,7 +85,7 @@ int writeSecure(char* filename, char* data, unsigned long numeroRiga, char mode)
                 fclose(file);
                 return -1;
             }
-            sprintf(nuovoContenuto, "%s%s\n", righe[numeroRiga - 1], data); // Nessuno spazio extra
+            sprintf(nuovoContenuto, "%s%s\n", righe[numeroRiga - 1], data);
             free(righe[numeroRiga - 1]);
             righe[numeroRiga - 1] = nuovoContenuto;
         }

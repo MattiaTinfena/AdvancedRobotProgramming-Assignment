@@ -96,15 +96,15 @@ void createTargets() {
     {
         if(status.targets.value[i] != 0){
             do {
-                x_pos = rand() % (WINDOW_LENGTH - 1);
-                y_pos = rand() % (WINDOW_WIDTH - 1);
+                x_pos = rand() % (WINDOW_LENGTH - 10);
+                y_pos = rand() % (WINDOW_WIDTH - 10);
             } while (
                 ((abs(x_pos - status.drone.x) <= NO_SPAWN_DIST) &&
                 (abs(y_pos - status.drone.y) <= NO_SPAWN_DIST)) || 
                 canSpawnPrev(x_pos, y_pos) == 0);
 
-            status.targets.x[i] = x_pos;
-            status.targets.y[i] = y_pos;
+            status.targets.x[i] = x_pos + 5; // To bring the target in the range 5-95
+            status.targets.y[i] = y_pos + 5; // To bring the target in the range 5-95
         }
     }
 }
