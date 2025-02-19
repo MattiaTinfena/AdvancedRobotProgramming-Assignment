@@ -312,15 +312,6 @@ void updatePosition(Drone *p, Force force, int mass, Speed *speed, Speed *speedP
     p->x = x_pos;
     p->y = y_pos;
 
-
-    // if (p->x < 0 || p->x >= WINDOW_LENGTH) force_d.x = 0;
-    // if (p->y < 0 || p->y >= WINDOW_WIDTH) force_d.y = 0;
-
-    // if (p->x < 0) p->x = 0;
-    // else if (p->x >= WINDOW_LENGTH) p->x = WINDOW_LENGTH - 1;
-    // if (p->y < 0) p->y = 0;
-    // else if (p->y >= WINDOW_WIDTH) p->y = WINDOW_WIDTH - 1;
-
     p->previous_x[1] = p->previous_x[0]; 
     p->previous_x[0] = p->x;  
     p->previous_y[1] = p->previous_y[0];

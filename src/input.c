@@ -23,7 +23,6 @@ int fds[4];
 int level = 0;
 
 float droneInfo[6] = {0.0};
-char droneInfo_str[40];
 
 int mode = MENU;   
 int disp = CHOOSENAME;
