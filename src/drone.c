@@ -10,7 +10,7 @@
 #include "drone.h"
 
 
-#define PERIOD 10000
+#define PERIOD 100000
 #define MAX_DIRECTIONS 80
 
 Force force_d = {0, 0};
