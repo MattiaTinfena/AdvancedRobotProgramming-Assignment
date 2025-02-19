@@ -16,6 +16,7 @@
 Force force_d = {0, 0};
 Force force_o = {0, 0};
 Force force_t = {0, 0};
+Force force_b = {0, 0};
 
 Force force = {0, 0};
 
@@ -215,10 +216,10 @@ void obstacle_force(Drone *drone, Obstacles* obstacles) {
         if (distance > FORCE_THRESHOLD) {
             continue;
         }
-        float repulsion =ETA * pow(((1/distance) - (1/FORCE_THRESHOLD)), 2)/distance;
+        float repulsion = ETA * (1/distance - 1/FORCE_THRESHOLD) * (1/(pow(distance, 2))) * (distance - FORCE_THRESHOLD);
         if (repulsion > MAX_FORCE) repulsion = MAX_FORCE;
-        force_o.x -= repulsion * (deltaX / distance);
-        force_o.y -= repulsion * (deltaY / distance);
+        force_o.x += repulsion * (deltaX / distance);
+        force_o.y += repulsion * (deltaY / distance);
     }
 
 }
@@ -238,21 +239,53 @@ void target_force(Drone *drone, Targets* targets) {
 
             if (distance > FORCE_THRESHOLD) continue;
 
-            float attraction = ETA * pow(((1/distance) - (1/FORCE_THRESHOLD)), 2)/distance;
+            float attraction = - ETA * (distance - FORCE_THRESHOLD) / fabs(distance - FORCE_THRESHOLD);
             if (attraction > MAX_FORCE) attraction = MAX_FORCE;
             force_t.x += attraction * (deltaX / distance);
             force_t.y += attraction * (deltaY / distance);
         }
     }
+}
 
+void boundary_force(Drone *drone) {
+    force_b.x = 0;
+    force_b.y = 0;
+
+    float left_boundary = - drone ->x;
+    float right_boundary = WINDOW_LENGTH - drone -> x;
+    float up_boundary = - drone ->y;
+    float down_boundary = WINDOW_WIDTH - drone ->y;
+
+    float repulsion;
+
+    if (left_boundary < FORCE_THRESHOLD) {
+        repulsion = ETA * (1/left_boundary - 1/FORCE_THRESHOLD) * (1/(pow(left_boundary, 2))) * (left_boundary - FORCE_THRESHOLD);
+        if (repulsion > MAX_FORCE) repulsion = MAX_FORCE;
+        force_b.x += repulsion;
+    }
+    if (right_boundary < FORCE_THRESHOLD) {
+        repulsion = ETA * (1/right_boundary - 1/FORCE_THRESHOLD) * (1/(pow(right_boundary, 2))) * (right_boundary - FORCE_THRESHOLD);
+        if (repulsion > MAX_FORCE) repulsion = MAX_FORCE;
+        force_b.x += repulsion;
+    }
+    if (up_boundary < FORCE_THRESHOLD) {
+        repulsion = ETA * (1/up_boundary - 1/FORCE_THRESHOLD) * (1/(pow(up_boundary, 2))) * (up_boundary - FORCE_THRESHOLD);
+        if (repulsion > MAX_FORCE) repulsion = MAX_FORCE;
+        force_b.y += repulsion;
+    }
+    if (down_boundary < FORCE_THRESHOLD) {
+        repulsion = ETA * (1/down_boundary - 1/FORCE_THRESHOLD) * (1/(pow(down_boundary, 2))) * (down_boundary - FORCE_THRESHOLD);
+        if (repulsion > MAX_FORCE) repulsion = MAX_FORCE;
+        force_b.y += repulsion;
+    }
 
 }
 
-Force total_force(Force drone, Force obstacle, Force target){
+Force total_force(Force drone, Force obstacle, Force target, Force boundary){
     
     Force total;
-    total.x = drone.x + obstacle.x + target.x;
-    total.y = drone.y + obstacle.y + target.y;
+    total.x = drone.x + obstacle.x + target.x + boundary.x;
+    total.y = drone.y + obstacle.y + target.y + boundary.y;
 
     LOGFORCES(drone, target, obstacle);
 
@@ -273,13 +306,13 @@ void updatePosition(Drone *p, Force force, int mass, Speed *speed, Speed *speedP
     p->y = y_pos;
 
 
-    if (p->x < 0 || p->x >= WINDOW_LENGTH) force_d.x = 0;
-    if (p->y < 0 || p->y >= WINDOW_WIDTH) force_d.y = 0;
+    // if (p->x < 0 || p->x >= WINDOW_LENGTH) force_d.x = 0;
+    // if (p->y < 0 || p->y >= WINDOW_WIDTH) force_d.y = 0;
 
-    if (p->x < 0) p->x = 0;
-    else if (p->x >= WINDOW_LENGTH) p->x = WINDOW_LENGTH - 1;
-    if (p->y < 0) p->y = 0;
-    else if (p->y >= WINDOW_WIDTH) p->y = WINDOW_WIDTH - 1;
+    // if (p->x < 0) p->x = 0;
+    // else if (p->x >= WINDOW_LENGTH) p->x = WINDOW_LENGTH - 1;
+    // if (p->y < 0) p->y = 0;
+    // else if (p->y >= WINDOW_WIDTH) p->y = WINDOW_WIDTH - 1;
 
     p->previous_x[1] = p->previous_x[0]; 
     p->previous_x[0] = p->x;  
@@ -302,10 +335,11 @@ void newDrone (Drone* drone, Targets* targets, Obstacles* obstacles, char* direc
     
     target_force(drone, targets);
     obstacle_force(drone, obstacles);
+    boundary_force(drone);
     if(inst == 'I'){
         drone_force(directions);
     }
-    force = total_force(force_d, force_o, force_t);
+    force = total_force(force_d, force_o, force_t, force_b);
 
     updatePosition(drone, force, droneMass, &speed,&speedPrev);
 }

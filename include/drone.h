@@ -28,7 +28,8 @@ void updatePosition(Drone *p, Force force, int mass, Speed *speed, Speed *speedP
 void drone_force(char* direction);
 void obstacle_force(Drone *drone, Obstacles* obstacles);
 void target_force(Drone *drone, Targets* targets);
-Force total_force(Force drone, Force obstacle, Force target);
+void boundary_force(Drone *drone);
+Force total_force(Force drone, Force obstacle, Force target, Force boundary);
 void sig_handler(int signo);
 void newDrone (Drone* drone, Targets* targets, Obstacles* obstacles, char* directions, char inst);
 void droneUpdate(Drone* drone, Speed* speed, Force* force, Message* msg);
