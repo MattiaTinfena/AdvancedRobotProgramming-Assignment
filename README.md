@@ -24,10 +24,12 @@ After installation, you can run the project using one of the following methods:
 
 If some changes are made to the code, it is necessary to run the make command to recompile the project before running it. Otherwise, you can use the "Run Code" if you are using vscode.
 
+However, when compiling with VS Code, some issues cause the window to resize incorrectly. To resolve this, it is advisable to run ```make clean``` followed by ```make``` from terminal.
+
 ## Project Architecture
 The project architecture of the assignment includes 6 active components, a parameter file ("appsettings.json"), and a log folder ("log") for all logger file. 
 
-![Project Architecture Overview](docs\ARP1-ass1.png)
+![Project Architecture Overview](docs/ARP1-ass1.png)
 
 ### Blackboard
 The blackboard serves as the central communication center between components:
@@ -139,11 +141,18 @@ where:
 For the y coordinate the formula is the same. Analyzing how the total force acting on the drone was calculated, this is given by:
 - User input, where each key pressed adjusts the force vector by increasing the corresponding force applied to the drone.
 - Repulsive force from the obstacles;
+$$
+F_{rep} = \begin{cases}
+\eta \cdot \left(\frac{1}{\rho(q)} - \frac{1}{\rho_0} \right) \frac{1}{\rho^2(q)}\nabla\rho(q), & \text{if } \rho(q) \leq \rho_0\\ 
+0, & \text{if} \rho(q) > \rho_0
+\end{cases}
+$$
+where $\eta$ is is a positive scaling factor, $\rho$ is the distance between the single obstacle and the drone and $\rho_0$ is the threshold above which the obstacle has no influence.
 - Attractive force from the targets.
-
-Each obstacle and target inside a given radius $\rho_0$ from the drone will add a force:
-$$ F = \frac {\eta}{\rho} \cdot \left(\frac{1}{\rho} - \frac{1}{\rho_0}  \right)^2$$
-where $\rho$ is the distance between the single obstacle/target and the drone. The force is then divided into its components along x and y.
+$$
+F_{att} = - \psi \frac{(q - q_{goal})}{||q-q_{goal}||}
+$$
+where $\psi$ is a positive scaling factor, $q_{goal}$ is the target position and $q$ is the drone position. 
 
 The drone utilizes the following primitives:
 - File Manipulation: Functions like fopen(), fwrite(), and fclose() are used to open a log file, write messages, and close it.
