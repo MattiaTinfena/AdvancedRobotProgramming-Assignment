@@ -89,15 +89,15 @@ int canSpawnPrev(int x_pos, int y_pos) {
 }
 
 void createTargets() {
-    // This function creates new targets ensuring that they do not overlap with the drone and the old targets.
+    // This function creates new targets ensuring that they do not overlap with the drone and the other targets.
     int x_pos, y_pos;
 
     for (int i = 0; i < numTarget + status.targets.incr; i++)
     {
         if(status.targets.value[i] != 0){
             do {
-                x_pos = rand() % (WINDOW_LENGTH - 10);
-                y_pos = rand() % (WINDOW_WIDTH - 10);
+                x_pos = rand() % (WINDOW_LENGTH - 10);  // To bring the target in the range 5-95
+                y_pos = rand() % (WINDOW_WIDTH - 10);   // To bring the target in the range 5-95
             } while (
                 ((abs(x_pos - status.drone.x) <= NO_SPAWN_DIST) &&
                 (abs(y_pos - status.drone.y) <= NO_SPAWN_DIST)) || 

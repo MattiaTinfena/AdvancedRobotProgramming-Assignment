@@ -22,28 +22,6 @@ long elapsed_ms;
 
 FILE *wdFile = NULL;
 
-void sig_handler(int signo) {
-    if(signo == SIGTERM){
-        LOGWDDIED();
-        fclose(wdFile);
-        exit(EXIT_SUCCESS);
-    }
-}
-
-
-void closeAll(int id){
-    for(int i  = 0; i < PROCESSTOCONTROL; i++){
-        if (i != id) {
-            if (kill(pids[i], SIGTERM) == -1) {
-                LOGPROCESSDIED(pids[i]);
-            }
-        }
-    }
-    LOGWDDIED();
-    fclose(wdFile);
-    exit(EXIT_SUCCESS);
-}
-
 int main() {
 
     wdFile = fopen("log/watchdog.log", "w");
@@ -157,4 +135,33 @@ int main() {
 
     fclose(wdFile);
     return 0;
+}
+
+/*********************************************************************************************************************/
+/***********************************************SIGNAL HANDLER********************************************************/
+/*********************************************************************************************************************/
+
+void sig_handler(int signo) {
+    if(signo == SIGTERM){
+        LOGWDDIED();
+        fclose(wdFile);
+        exit(EXIT_SUCCESS);
+    }
+}
+
+/*********************************************************************************************************************/
+/************************************************OTHER FUCTIONS*******************************************************/
+/*********************************************************************************************************************/
+
+void closeAll(int id){
+    for(int i  = 0; i < PROCESSTOCONTROL; i++){
+        if (i != id) {
+            if (kill(pids[i], SIGTERM) == -1) {
+                LOGPROCESSDIED(pids[i]);
+            }
+        }
+    }
+    LOGWDDIED();
+    fclose(wdFile);
+    exit(EXIT_SUCCESS);
 }

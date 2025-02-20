@@ -1,13 +1,13 @@
 #ifndef KEYBOARDMAP_H
 #define KEYBOARDMAP_H
 
-// Controlli
+//Controls
 #define MY_KEY_BACK 127
 #define MY_KEY_ENTER 10
 #define MY_KEY_SPACE 32
 #define MY_KEY_ESC 27
 
-// Lettere minuscole
+//Lowercase letters
 #define MY_KEY_q 113
 #define MY_KEY_w 119
 #define MY_KEY_e 101
@@ -35,7 +35,7 @@
 #define MY_KEY_n 110
 #define MY_KEY_m 109
 
-// Lettere maiuscole
+//Uppercase letters
 #define MY_KEY_Q 81
 #define MY_KEY_W 87
 #define MY_KEY_E 69

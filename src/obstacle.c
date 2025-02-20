@@ -101,7 +101,7 @@ int canSpawnPrev(int x_pos, int y_pos) {
 
 void createObstacles() {
 
-    // This function creates new obstacles ensuring that they do not overlap with the drone, the targets and the old obstacles.
+    // This function creates new obstacles ensuring that they do not overlap with the drone, the targets and the other obstacles.
     int x_pos, y_pos;
 
     for( int i = 0; i < MAX_OBSTACLES; i++){
@@ -112,8 +112,8 @@ void createObstacles() {
     for (int i = 0; i < numObstacle + status.obstacles.incr; i++){
     
         do {
-            x_pos = rand() % (WINDOW_LENGTH - 10);
-            y_pos = rand() % (WINDOW_WIDTH - 10);
+            x_pos = rand() % (WINDOW_LENGTH - 10);  // To bring the obstacle in the range 5-95
+            y_pos = rand() % (WINDOW_WIDTH - 10);   // To bring the obstacle in the range 5-95
         } while (
             ((abs(x_pos - status.drone.x) <= NO_SPAWN_DIST) &&
             (abs(y_pos - status.drone.y) <= NO_SPAWN_DIST)) || 

@@ -711,7 +711,7 @@ void readConfig() {
     inputStatus.difficulty = cJSON_GetObjectItemCaseSensitive(json, "Difficulty")->valueint;
     inputStatus.level = cJSON_GetObjectItemCaseSensitive(json, "StartingLevel")->valueint;
     
-    cJSON *numbersArray = cJSON_GetObjectItemCaseSensitive(json, "DefaultBTN"); // questo è un array
+    cJSON *numbersArray = cJSON_GetObjectItemCaseSensitive(json, "DefaultBTN");
     LOGINPUTCONFIGURATION(numbersArray);
 
     cJSON *playersArray = cJSON_GetObjectItemCaseSensitive(json, "Players");

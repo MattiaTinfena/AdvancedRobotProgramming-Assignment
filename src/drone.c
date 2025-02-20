@@ -235,32 +235,28 @@ void target_force(Drone *drone, Targets* targets) {
 
             if (distance > rho_0) continue;
 
-            float attraction = - psi * (distance - rho_0) / fmax(fabs(distance - rho_0), 1e-5); // Evita la divisione per zero
+            float attraction = - psi * (distance - rho_0) / fmax(fabs(distance - rho_0), 1e-5); 
             if (attraction > maxForce) attraction = maxForce;
             force_t.x += attraction * (deltaX / distance);
             force_t.y += attraction * (deltaY / distance);
         }
     }
 
-    // Limita le forze combinate
     force_t.x = fmin(force_t.x, maxForce);
     force_t.y = fmin(force_t.y, maxForce);
 }
 
 Force compute_repulsive_force(Drone *drone, float x, float y) {
-    Force force = {0.0, 0.0}; // Inizializza la forza a zero
-    double rho = sqrt(pow(drone->x - x, 2) + pow(drone->y - y, 2)); // Distanza
+    Force force = {0.0, 0.0}; 
+    double rho = sqrt(pow(drone->x - x, 2) + pow(drone->y - y, 2));
 
-    if (rho > rho_0) return force; // Nessuna forza se fuori dal range
+    if (rho > rho_0) return force; 
 
-    // Calcola la direzione (gradiente normalizzato)
     double grad_x = (drone->x - x) / rho;
     double grad_y = (drone->y - y) / rho;
 
-    // Calcola il coefficiente della forza
     double coeff = eta * (1.0 / rho - 1.0 / rho_0) * (1.0 / (rho * rho));
 
-    // Assegna i valori della forza
     force.x = coeff * grad_x;
     force.y = coeff * grad_y;
 
