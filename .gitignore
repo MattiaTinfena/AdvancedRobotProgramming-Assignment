@@ -1,40 +1,23 @@
-# Ignora tutto
+# Ignore everything
 *
-
-# Ignora i file .gitignore
+# Except for files:
 !.gitignore
-
-# Non ignorare i file .c
 !*.c
-
-# Non ignorare i file .h
+!*.cpp
 !*.h
-
-# Non ignorare i readme
+!*.hpp
+!*.idl
 !*.md
-
-# Non ignorare i file .json
 !*.json
-
-# Non ignorare i file .json
 !*.sh
-
-# Non ignorare il Makefile
+!*.png
+!*.gif
 !Makefile
 
-#Non ignorare la cartella .vscode
+# Except for directories:
 !**/.vscode/
-
-#Non ignorare la cartella .vscode
 !**/cJSON/
-
-#Non ignorare la cartella .vscode
 !**/include/
-
-#Non ignorare la cartella .vscode
 !**/src/
-
-# Non ignorare la cartella docs
 !**/docs/
-# Non ignorare i file png
-!*.png
+!**/idl/
