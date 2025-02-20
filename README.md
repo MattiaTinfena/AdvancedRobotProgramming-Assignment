@@ -163,10 +163,14 @@ where:
 For the y coordinate the formula is the same. Analyzing how the total force acting on the drone was calculated, this is given by:
 - User input, where each key pressed adjusts the force vector by increasing the corresponding force applied to the drone.
 - Repulsive force from the obstacles;
+
 $$ F_{rep} = \begin{cases} \eta \cdot \left(\frac{1}{\rho(q)} - \frac{1}{\rho_0} \right) \frac{1}{\rho^2(q)}\nabla\rho(q), & \text{if } \rho(q) \leq \rho_0\\  0, & \text{if} \rho(q) > \rho_0 \end{cases} $$
+
 where $\eta$ is is a positive scaling factor, $\rho$ is the distance between the single obstacle and the drone and $\rho_0$ is the threshold above which the obstacle has no influence.
 - Attractive force from the targets.
+
 $$ F_{att} = - \psi \frac{(q - q_{goal})}{||q-q_{goal}||} $$
+
 where $\psi$ is a positive scaling factor, $q_{goal}$ is the target position and $q$ is the drone position. 
 
 The drone utilizes the following primitives:
