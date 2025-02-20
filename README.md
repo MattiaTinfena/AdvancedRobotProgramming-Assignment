@@ -164,7 +164,10 @@ For the y coordinate the formula is the same. Analyzing how the total force acti
 - User input, where each key pressed adjusts the force vector by increasing the corresponding force applied to the drone.
 - Repulsive force from the obstacles;
 
-$$ F_{rep} = \begin{cases} \eta \cdot \left(\frac{1}{\rho(q)} - \frac{1}{\rho_0} \right) \frac{1}{\rho^2(q)}\nabla\rho(q), & \text{if } \rho(q) \leq \rho_0\\  0, & \text{if} \rho(q) > \rho_0 \end{cases} $$
+$$ F_{rep} = \begin{cases} 
+\eta \cdot \left(\frac{1}{\rho(q)} - \frac{1}{\rho_0} \right) \frac{1}{\rho^2(q)}\nabla\rho(q), & \text{if } \rho(q) \leq \rho_0\\  
+0, & \text{if} \rho(q) > \rho_0 
+\end{cases} $$
 
 where $\eta$ is is a positive scaling factor, $\rho$ is the distance between the single obstacle and the drone and $\rho_0$ is the threshold above which the obstacle has no influence.
 - Attractive force from the targets.
@@ -202,7 +205,7 @@ The level of detail in the logs varies based on the project's build mode. In deb
 
 ## Project structure
 ```
-📂 NomeRepository  
+📂 AdvancedRobotProgramming-Assignment  
 │── 📄 Makefile  
 │── 📄 appsettings.json  
 │── 📄 README.md  
